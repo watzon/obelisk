@@ -1,0 +1,12 @@
+name: obelisk
+version: 0.1.0
+
+authors:
+  - Chris Watson <cawatson1993@gmail.com>
+
+crystal: '>= 1.16.3'
+
+license: MIT
+
+crystalline:
+  main: ./src/obelisk.cr
