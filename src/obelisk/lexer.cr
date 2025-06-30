@@ -395,32 +395,73 @@ module Obelisk
 
     def initialize(@lexer : RegexLexer, text : String)
       @state = LexerState.new(text)
-      @token_queue = [] of Token
+      @token_queue = Deque(Token).new
+      @finished = false
     end
 
     def next : Token | Iterator::Stop
       loop do
         # Return queued tokens first
-        unless @token_queue.empty?
+        if !@token_queue.empty?
           return @token_queue.shift
         end
 
-        # If we're at the end, return EOF
-        if @state.at_end?
+        # If we're finished, return stop
+        if @finished
           return stop
         end
 
+        # If we're at the end, mark finished and return EOF
+        if @state.at_end?
+          @finished = true
+          return stop
+        end
+
+        # Safety check to prevent infinite loops
+        start_pos = @state.pos
+        
         # Find a matching rule
         if match_data = @lexer.find_match(@state)
           rule, match = match_data
           matched_text = match[0]
           
+          # Safety check: ensure we got a valid match
+          if matched_text.empty?
+            # Empty match, advance by one character to prevent infinite loop
+            if !@state.at_end?
+              char = @state.remaining[0]
+              @state.advance(1)
+              return Token.new(TokenType::Error, char.to_s)
+            else
+              @finished = true
+              return stop
+            end
+          end
+          
           # Execute the rule action
-          groups = match.to_a[1..].map(&.to_s)
+          groups = begin
+            match.to_a[1..].map(&.to_s)
+          rescue
+            [] of String  # Handle potential array access errors
+          end
+          
           tokens = execute_action(rule.action, matched_text, groups)
           
           # Advance the position
           @state.advance(matched_text.size)
+          
+          # Safety check: ensure we made progress
+          if @state.pos == start_pos
+            # No progress made, force advance to prevent infinite loop
+            if !@state.at_end?
+              char = @state.remaining[0]
+              @state.advance(1)
+              return Token.new(TokenType::Error, char.to_s)
+            else
+              @finished = true
+              return stop
+            end
+          end
           
           # Queue additional tokens and return the first one
           if tokens.empty?
@@ -428,26 +469,39 @@ module Obelisk
             next
           else
             first_token = tokens.shift
-            @token_queue.concat(tokens)
+            if !tokens.empty?
+              @token_queue.concat(tokens)
+            end
             return first_token
           end
         else
           # No rule matched, emit error token for current character
-          char = @state.remaining[0]
-          @state.advance(1)
-          return Token.new(TokenType::Error, char.to_s)
+          if !@state.at_end?
+            char = @state.remaining[0]
+            @state.advance(1)
+            return Token.new(TokenType::Error, char.to_s)
+          else
+            @finished = true
+            return stop
+          end
         end
       end
     end
 
     private def execute_action(action : RuleAction, matched_text : String, groups : Array(String)) : Array(Token)
-      case action
-      when TokenType
-        [Token.new(action, matched_text)]
-      when Proc
-        action.call(matched_text, @state, groups)
-      else
-        [] of Token
+      begin
+        case action
+        when TokenType
+          [Token.new(action, matched_text)]
+        when Proc
+          result = action.call(matched_text, @state, groups)
+          result.is_a?(Array(Token)) ? result : [] of Token
+        else
+          [] of Token
+        end
+      rescue
+        # If action execution fails, return a basic token
+        [Token.new(TokenType::Error, matched_text)]
       end
     end
   end
@@ -557,43 +611,76 @@ module Obelisk
     include Iterator(Token)
 
     @segments : Array({iterator: TokenIterator, delimiter: Token?})
+    @finished : Bool
 
     def initialize(@lexer : DelegatingLexer, @text : String)
       @pos = 0
-      @regions = @lexer.detect_all_regions(@text, LexerState.new(@text))
+      @finished = false
+      @regions = [] of EmbeddedRegion
       @current_region_index = 0
-      @segments = build_segments
+      @segments = [] of {iterator: TokenIterator, delimiter: Token?}
       @current_segment_index = 0
       @current_iterator = nil.as(TokenIterator?)
+      
+      begin
+        @regions = @lexer.detect_all_regions(@text, LexerState.new(@text))
+        @segments = build_segments
+      rescue ex
+        # If initialization fails, create a fallback segment
+        @segments = [{
+          iterator: @lexer.base_lexer.tokenize(@text).as(TokenIterator),
+          delimiter: nil.as(Token?)
+        }]
+        @finished = false  # We still have one segment to process
+      end
     end
 
     def next : Token | Iterator::Stop
+      return stop if @finished
+      
       loop do
         # If we don't have a current iterator, get the next segment
         unless @current_iterator
           if @current_segment_index >= @segments.size
+            @finished = true
             return stop
           end
           
-          segment = @segments[@current_segment_index]
-          @current_iterator = segment[:iterator]
-          @current_segment_index += 1
-          
-          # Emit delimiter token if present
-          if delimiter = segment[:delimiter]
-            return delimiter
+          begin
+            segment = @segments[@current_segment_index]
+            @current_iterator = segment[:iterator]
+            @current_segment_index += 1
+            
+            # Emit delimiter token if present
+            if delimiter = segment[:delimiter]
+              return delimiter
+            end
+          rescue
+            # If segment access fails, mark as finished
+            @finished = true
+            return stop
           end
         end
 
         # Get the next token from the current iterator
         if iterator = @current_iterator
-          case token = iterator.next
-          when Token
-            return token
-          when Iterator::Stop
+          begin
+            case token = iterator.next
+            when Token
+              return token
+            when Iterator::Stop
+              @current_iterator = nil
+              next # Move to next segment
+            end
+          rescue
+            # If iterator fails, move to next segment
             @current_iterator = nil
-            next # Move to next segment
+            next
           end
+        else
+          # This shouldn't happen, but handle it gracefully
+          @finished = true
+          return stop
         end
       end
     end
@@ -602,55 +689,87 @@ module Obelisk
       segments = [] of {iterator: TokenIterator, delimiter: Token?}
       last_pos = 0
 
-      @regions.each do |region|
-        # Add base lexer segment before the region
-        if region.start_pos > last_pos
-          base_content = @text[last_pos...region.start_pos]
-          unless base_content.empty?
-            segments << {
-              iterator: @lexer.base_lexer.tokenize(base_content),
-              delimiter: nil.as(Token?)
-            }
+      begin
+        @regions.each do |region|
+          # Validate region bounds
+          next if region.start_pos < 0 || region.start_pos >= @text.size
+          next if region.end_pos && (region.end_pos.not_nil! <= region.start_pos || region.end_pos.not_nil! > @text.size)
+          
+          # Add base lexer segment before the region
+          if region.start_pos > last_pos
+            begin
+              base_content = @text[last_pos...region.start_pos]
+              unless base_content.empty?
+                segments << {
+                  iterator: @lexer.base_lexer.tokenize(base_content).as(TokenIterator),
+                  delimiter: nil.as(Token?)
+                }
+              end
+            rescue
+              # Skip this segment if string slicing fails
+            end
+          end
+
+          # Add start delimiter if present
+          if start_token = region.start_token
+            begin
+              segments << {
+                iterator: [start_token].each.as(TokenIterator),
+                delimiter: nil.as(Token?)
+              }
+            rescue
+              # Skip if iterator creation fails
+            end
+          end
+
+          # Add embedded region
+          begin
+            content = region.content(@text)
+            unless content.empty?
+              segments << {
+                iterator: region.lexer.tokenize(content).as(TokenIterator),
+                delimiter: nil.as(Token?)
+              }
+            end
+          rescue
+            # Skip if content extraction or tokenization fails
+          end
+
+          # Add end delimiter if present
+          if end_token = region.end_token
+            begin
+              segments << {
+                iterator: [end_token].each.as(TokenIterator),
+                delimiter: nil.as(Token?)
+              }
+            rescue
+              # Skip if iterator creation fails
+            end
+          end
+
+          last_pos = region.end_pos || region.start_pos
+        end
+
+        # Add remaining base content
+        if last_pos < @text.size
+          begin
+            remaining_content = @text[last_pos..]
+            unless remaining_content.empty?
+              segments << {
+                iterator: @lexer.base_lexer.tokenize(remaining_content).as(TokenIterator),
+                delimiter: nil.as(Token?)
+              }
+            end
+          rescue
+            # Skip if remaining content processing fails
           end
         end
-
-        # Add start delimiter if present
-        if start_token = region.start_token
-          segments << {
-            iterator: [start_token].each.as(TokenIterator),
-            delimiter: nil.as(Token?)
-          }
-        end
-
-        # Add embedded region
-        content = region.content(@text)
-        unless content.empty?
-          segments << {
-            iterator: region.lexer.tokenize(content),
-            delimiter: nil.as(Token?)
-          }
-        end
-
-        # Add end delimiter if present
-        if end_token = region.end_token
-          segments << {
-            iterator: [end_token].each.as(TokenIterator),
-            delimiter: nil.as(Token?)
-          }
-        end
-
-        last_pos = region.end_pos
-      end
-
-      # Add remaining base content
-      if last_pos < @text.size
-        remaining_content = @text[last_pos..]
-        unless remaining_content.empty?
-          segments << {
-            iterator: @lexer.base_lexer.tokenize(remaining_content),
-            delimiter: nil.as(Token?)
-          }
-        end
+      rescue
+        # If any major error occurs, create a fallback segment with the entire text
+        segments = [{
+          iterator: @lexer.base_lexer.tokenize(@text).as(TokenIterator),
+          delimiter: nil.as(Token?)
+        }]
       end
 
       segments
@@ -751,7 +870,7 @@ module Obelisk
     @strategy : CompositionStrategy
 
     def initialize(@name : String, lexers : Array(Lexer), @strategy = CompositionStrategy::FirstMatch)
-      @lexers = lexers
+      @lexers = lexers.map(&.as(Lexer))
     end
 
     def config : LexerConfig
@@ -816,13 +935,13 @@ module Obelisk
     include Iterator(Token)
 
     @iterators : Array(TokenIterator)
-    @current_tokens : Array(Tuple(Token, Int32))
+    @current_tokens : Deque(Tuple(Token, Int32))
     @positions : Array(Int32)
     @finished : Array(Bool)
 
     def initialize(iterators : Array(TokenIterator))
       @iterators = iterators.map(&.as(TokenIterator))
-      @current_tokens = [] of {Token, Int32} # token with source iterator index
+      @current_tokens = Deque(Tuple(Token, Int32)).new # token with source iterator index
       @positions = Array.new(@iterators.size, 0)
       @finished = Array.new(@iterators.size, false)
       prime_tokens
@@ -832,7 +951,13 @@ module Obelisk
       return stop if @current_tokens.empty?
 
       # Get the next token (sorted by position, then by iterator priority)
-      @current_tokens.sort_by! { |token_info| token_info[0].value.size }
+      @current_tokens.to_a.sort_by! { |token_info| token_info[0].value.size }
+      @current_tokens = Deque.new(@current_tokens.to_a.sort_by! { |token_info| token_info[0].value.size })
+      
+      if @current_tokens.empty?
+        return stop
+      end
+      
       token, iterator_index = @current_tokens.shift
 
       # Prime the next token from the same iterator
@@ -848,13 +973,18 @@ module Obelisk
     end
 
     private def advance_iterator(index : Int32)
-      return if @finished[index]
+      return if index >= @finished.size || @finished[index]
 
-      case token = @iterators[index].next
-      when Token
-        @current_tokens << {token, index}
-        @positions[index] += token.value.size
-      when Iterator::Stop
+      begin
+        case token = @iterators[index].next
+        when Token
+          @current_tokens << {token, index}
+          @positions[index] += token.value.size
+        when Iterator::Stop
+          @finished[index] = true
+        end
+      rescue
+        # Mark as finished if there's an error
         @finished[index] = true
       end
     end
@@ -896,7 +1026,7 @@ module Obelisk
     @chain : Array(Lexer)
 
     def initialize(@name : String, chain : Array(Lexer))
-      @chain = chain
+      @chain = chain.map(&.as(Lexer))
     end
 
     def config : LexerConfig
@@ -966,35 +1096,42 @@ module Obelisk
     include Iterator(Token)
 
     def initialize(@source : TokenIterator, @lexer : Lexer)
-      @buffer = [] of Token
+      @buffer = Deque(Token).new
       @source_finished = false
     end
 
     def next : Token | Iterator::Stop
       # Return buffered tokens first
-      unless @buffer.empty?
+      if !@buffer.empty?
         return @buffer.shift
       end
 
       # Get next source token and process it
-      case source_token = @source.next
-      when Token
-        # Process the token's value through the target lexer
-        processed_tokens = @lexer.tokenize(source_token.value).to_a
-        
-        if processed_tokens.empty?
-          # If no tokens produced, return original
-          source_token
+      begin
+        case source_token = @source.next
+        when Token
+          # Process the token's value through the target lexer
+          processed_tokens = @lexer.tokenize(source_token.value).to_a
+          
+          if processed_tokens.empty?
+            # If no tokens produced, return original
+            source_token
+          else
+            # Return first processed token, buffer the rest
+            first_token = processed_tokens.shift
+            if !processed_tokens.empty?
+              @buffer.concat(processed_tokens)
+            end
+            first_token
+          end
+        when Iterator::Stop
+          stop
         else
-          # Return first processed token, buffer the rest
-          first_token = processed_tokens.shift
-          @buffer.concat(processed_tokens)
-          first_token
+          # This should never happen, but satisfies Crystal's type checker
+          stop
         end
-      when Iterator::Stop
-        stop
-      else
-        # This should never happen, but satisfies Crystal's type checker
+      rescue
+        # If any error occurs, return stop
         stop
       end
     end
@@ -1598,6 +1735,8 @@ module Obelisk
 
     def initialize(@architecture : EmbeddedLanguageArchitecture, @text : String, @base_language : String)
       @contexts = @architecture.analyze_contexts(@text, @base_language)
+        .reject(&.language.== @base_language)  # Don't process base language contexts separately
+        .sort_by(&.start_pos)  # Process in document order
       @current_context_index = 0
       @current_iterator = nil
       @current_position = 0
@@ -1607,9 +1746,19 @@ module Obelisk
       loop do
         # Get current iterator or advance to next context
         unless @current_iterator
-          return stop if @current_context_index >= @contexts.size
-          
-          advance_to_next_context
+          if @current_context_index >= @contexts.size
+            # Handle any remaining text after all contexts
+            if @current_position < @text.size
+              remaining_content = @text[@current_position..]
+              base_lexer = @architecture.get_lexer(@base_language)
+              @current_iterator = base_lexer.tokenize(remaining_content)
+              @current_position = @text.size
+            else
+              return stop
+            end
+          else
+            advance_to_next_context
+          end
           next
         end
 
@@ -1646,9 +1795,13 @@ module Obelisk
       unless content.empty?
         lexer = @architecture.get_lexer(context.language)
         @current_iterator = lexer.tokenize(content)
+        @current_position = context.end_pos || @text.size
+        return
       end
       
-      @current_position = context.end_pos || @text.size
+      # Move to next context if current one is empty
+      @current_context_index += 1
+      advance_to_next_context
     end
   end
 
