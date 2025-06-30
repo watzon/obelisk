@@ -1,5 +1,6 @@
 require "./obelisk/token"
 require "./obelisk/lexer"
+require "./obelisk/context_sensitive"
 require "./obelisk/coalescing_iterator"
 require "./obelisk/formatter"
 require "./obelisk/style"
