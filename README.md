@@ -415,6 +415,38 @@ crystal run examples/00_quickstart.cr
   - [ ] Hybrid approach: hand-written + XML lexers
   - [ ] Code generation from XML definitions
 
+## Development
+
+### Running Tests
+
+```bash
+# Run tests without coverage
+crystal spec
+
+# Run tests with coverage (requires kcov)
+./scripts/test.sh with-coverage
+
+# Auto-detect kcov and run with coverage if available
+./scripts/test.sh auto
+```
+
+Install kcov for coverage reports:
+```bash
+# Ubuntu/Debian
+sudo apt-get install kcov
+
+# macOS
+brew install kcov
+```
+
+### Development Commands
+
+See [CLAUDE.md](CLAUDE.md) for the complete list of development commands including:
+- `crystal spec` - Run all tests
+- `crystal run examples/00_quickstart.cr` - Run examples
+- `crystal build src/obelisk.cr --no-codegen` - Type check
+- `crystal tool format` - Format code
+
 ## Contributing
 
 1. Fork it (<https://github.com/watzon/obelisk/fork>)

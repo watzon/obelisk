@@ -37,7 +37,7 @@ jobs:
       run: crystal build src/obelisk.cr --no-codegen
 
     - name: Run specs
-      run: crystal spec
+      run: ./scripts/test.sh no-coverage
 
     - name: Run examples
       run: |
@@ -60,6 +60,35 @@ jobs:
 
     - name: Check formatting
       run: crystal tool format --check
+
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: "1.16.3"
+
+    - name: Install kcov
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y kcov
+
+    - name: Install dependencies
+      run: shards install
+
+    - name: Run specs with coverage
+      run: ./scripts/test.sh with-coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/report/cobertura.xml
+        fail_ci_if_error: false
 
   build:
     runs-on: ubuntu-latest
