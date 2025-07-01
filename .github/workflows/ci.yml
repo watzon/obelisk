@@ -73,21 +73,24 @@ jobs:
       with:
         crystal: "1.16.3"
 
-    - name: Install kcov
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y kcov
-
     - name: Install dependencies
       run: shards install
 
-    - name: Run specs with coverage
-      run: ./scripts/test.sh with-coverage
+    - name: Build spec binary for coverage
+      run: |
+        mkdir -p coverage/bin
+        echo "require \"./spec/**\"" > "./coverage/bin/obelisk_spec.cr"
+        crystal build -Dstrict_multi_assign --error-on-warnings "./coverage/bin/obelisk_spec.cr" -o "./coverage/bin/obelisk_spec"
+
+    - name: Run kcov coverage
+      uses: sudo-bot/action-kcov@latest
+      with:
+        cli-args: "--clean --include-path=./src --exclude-pattern=/usr/,/lib/crystal/ ./coverage/report ./coverage/bin/obelisk_spec --order=random"
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        files: ./coverage/report/cobertura.xml
+        directory: ./coverage/report/
         fail_ci_if_error: false
 
   build:
