@@ -5,43 +5,45 @@ require "../src/obelisk"
 
 # Create a custom formatter that outputs Markdown with syntax info
 class MarkdownFormatter < Obelisk::Formatter
-  def format(tokens : Iterator(Obelisk::Token), style : Obelisk::Style) : String
-    String.build do |io|
-      io << "```crystal\n"
+  def name : String
+    "markdown"
+  end
 
-      current_line = [] of {Obelisk::Token, String}
+  def format(tokens : Obelisk::TokenIterator, style : Obelisk::Style, io : IO) : Nil
+    io << "```crystal\n"
 
-      tokens.each do |token|
-        if token.value.includes?("\n")
-          # Handle tokens with newlines
-          lines = token.value.split('\n', remove_empty: false)
+    current_line = [] of {Obelisk::Token, String}
 
-          lines.each_with_index do |line, idx|
-            if idx > 0
-              # Output current line and start new one
-              output_line(io, current_line)
-              io << '\n'
-              current_line.clear
-            end
+    tokens.each do |token|
+      if token.value.includes?("\n")
+        # Handle tokens with newlines
+        lines = token.value.split('\n', remove_empty: false)
 
-            unless line.empty?
-              # Generate markdown formatting
-              formatted = format_token(token, line)
-              current_line << {token, formatted}
-            end
+        lines.each_with_index do |line, idx|
+          if idx > 0
+            # Output current line and start new one
+            output_line(io, current_line)
+            io << '\n'
+            current_line.clear
           end
-        else
-          # Single line token
-          formatted = format_token(token, token.value)
-          current_line << {token, formatted}
+
+          unless line.empty?
+            # Generate markdown formatting
+            formatted = format_token(token, line)
+            current_line << {token, formatted}
+          end
         end
+      else
+        # Single line token
+        formatted = format_token(token, token.value)
+        current_line << {token, formatted}
       end
-
-      # Output final line
-      output_line(io, current_line) unless current_line.empty?
-
-      io << "\n```"
     end
+
+    # Output final line
+    output_line(io, current_line) unless current_line.empty?
+
+    io << "\n```"
   end
 
   private def format_token(token : Obelisk::Token, text : String) : String
@@ -68,47 +70,51 @@ end
 
 # Create a custom formatter that outputs a simple token list
 class TokenListFormatter < Obelisk::Formatter
-  def format(tokens : Iterator(Obelisk::Token), style : Obelisk::Style) : String
-    String.build do |io|
-      io << "Token List:\n"
-      io << "-" * 50 << '\n'
+  def name : String
+    "tokenlist"
+  end
 
-      tokens.each_with_index do |token, idx|
-        io << sprintf("%3d: %-25s %s\n", idx, token.type.to_s, token.value.inspect)
-      end
+  def format(tokens : Obelisk::TokenIterator, style : Obelisk::Style, io : IO) : Nil
+    io << "Token List:\n"
+    io << "-" * 50 << '\n'
+
+    tokens.each_with_index do |token, idx|
+      io << sprintf("%3d: %-25s %s\n", idx, token.type.to_s, token.value.inspect)
     end
   end
 end
 
 # Create a custom formatter that generates BBCode for forums
 class BBCodeFormatter < Obelisk::Formatter
-  def format(tokens : Iterator(Obelisk::Token), style : Obelisk::Style) : String
-    String.build do |io|
-      io << "[code]\n"
+  def name : String
+    "bbcode"
+  end
 
-      tokens.each do |token|
-        text = token.value
+  def format(tokens : Obelisk::TokenIterator, style : Obelisk::Style, io : IO) : Nil
+    io << "[code]\n"
 
-        formatted = case token.type
-                    when .keyword?, .keyword_declaration?
-                      "[color=red][b]#{text}[/b][/color]"
-                    when .comment?, .comment_single?
-                      "[color=gray][i]#{text}[/i][/color]"
-                    when .literal_string?, .literal_string_double?
-                      "[color=green]#{text}[/color]"
-                    when .literal_number?
-                      "[color=blue]#{text}[/color]"
-                    when .name_function?, .name_class?
-                      "[color=purple]#{text}[/color]"
-                    else
-                      text
-                    end
+    tokens.each do |token|
+      text = token.value
 
-        io << formatted
-      end
+      formatted = case token.type
+                  when .keyword?, .keyword_declaration?
+                    "[color=red][b]#{text}[/b][/color]"
+                  when .comment?, .comment_single?
+                    "[color=gray][i]#{text}[/i][/color]"
+                  when .literal_string?, .literal_string_double?
+                    "[color=green]#{text}[/color]"
+                  when .literal_number?
+                    "[color=blue]#{text}[/color]"
+                  when .name_function?, .name_class?
+                    "[color=purple]#{text}[/color]"
+                  else
+                    text
+                  end
 
-      io << "\n[/code]"
+      io << formatted
     end
+
+    io << "\n[/code]"
   end
 end
 
