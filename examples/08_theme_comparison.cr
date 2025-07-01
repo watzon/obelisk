@@ -10,15 +10,15 @@ require "kemal"
 
 class User
   include JSON::Serializable
-  
+
   property id : Int32
   property name : String
   property email : String
   property active : Bool = true
-  
+
   def initialize(@id, @name, @email)
   end
-  
+
   def to_h
     {
       "id" => @id,
@@ -41,7 +41,7 @@ end
 get "/api/users/:id" do |env|
   id = env.params.url["id"].to_i
   user = USERS[id]?
-  
+
   if user
     env.response.content_type = "application/json"
     user.to_h.to_json
@@ -53,7 +53,7 @@ end
 post "/api/users" do |env|
   user = User.from_json(env.request.body.not_nil!)
   USERS[user.id] = user
-  
+
   env.response.status_code = 201
   env.response.content_type = "application/json"
   user.to_h.to_json
@@ -73,7 +73,7 @@ puts "=== Terminal Output Comparison ==="
 themes.each do |theme|
   puts "\n### #{theme.upcase} Theme ###"
   highlighted = Obelisk.highlight(code, "crystal", "terminal", theme)
-  
+
   # Show first 15 lines to keep output manageable
   lines = highlighted.lines
   puts lines.first(15).join('\n')
@@ -86,16 +86,16 @@ themes.each do |theme|
   puts "\n### #{theme.upcase} Theme ###"
   style = Obelisk.style(theme)
   next unless style
-  
+
   formatter = Obelisk::HTMLFormatter.new(with_classes: true)
-  
+
   # Show CSS snippet
   css = formatter.css(style)
   css_lines = css.lines.first(5)
   puts "CSS Preview:"
   puts css_lines.join
   puts "... (#{css.lines.size - 5} more lines)" if css.lines.size > 5
-  
+
   # Show background color
   puts "Background: #{style.background.to_hex}"
 end
@@ -107,18 +107,18 @@ formatter = Obelisk::HTMLFormatter.new(with_classes: true)
 html_parts = themes.map do |theme|
   style = Obelisk.style(theme)
   next unless style
-  
+
   lexer = Obelisk.lexer("crystal")
   next unless lexer
-  
+
   tokens = lexer.tokenize(code)
   highlighted = formatter.format(tokens, style)
   css = formatter.css(style)
-  
+
   # Prefix CSS rules with theme name to avoid conflicts
   prefixed_css = css.gsub(/\.(\w+)/, ".#{theme}-\\1")
   prefixed_html = highlighted.gsub(/class="(\w+)"/, "class=\"#{theme}-\\1\"")
-  
+
   {theme: theme, html: prefixed_html, css: prefixed_css, background: style.background.to_hex}
 end.compact
 
@@ -181,16 +181,14 @@ comparison_html = <<-HTML
   <h1>Obelisk Syntax Highlighting - Theme Comparison</h1>
   
   <div class="themes-container">
-#{html_parts.map do |part|
-  <<-THEME
-    <div class="theme-box">
-      <div class="theme-header">#{part[:theme]} Theme</div>
-      <div class="theme-content" style="background: #{part[:background]}">
-        #{part[:html]}
-      </div>
-    </div>
-  THEME
-end.join("\n")}
+#{html_parts.map { |part|
+    "    <div class=\"theme-box\">\n" +
+      "      <div class=\"theme-header\">#{part[:theme]} Theme</div>\n" +
+      "      <div class=\"theme-content\" style=\"background: #{part[:background]}\">\n" +
+      "        #{part[:html]}\n" +
+      "      </div>\n" +
+      "    </div>"
+  }.join("\n")}
   </div>
   
   <p style="text-align: center; margin-top: 30px; color: #666;">
@@ -207,31 +205,31 @@ puts "\n=== Theme Color Analysis ==="
 themes.each do |theme_name|
   style = Obelisk.style(theme_name)
   next unless style
-  
+
   puts "\n#{theme_name.upcase}:"
   puts "  Background: #{style.background.to_hex}"
-  
+
   # Count how many token types have custom styles
   styled_count = 0
   total_count = 0
-  
+
   {% for member in Obelisk::TokenType.constants %}
     total_count += 1
     entry = style.get(Obelisk::TokenType::{{member}})
     styled_count += 1 if entry.has_styles?
   {% end %}
-  
+
   puts "  Styled tokens: #{styled_count}/#{total_count}"
-  
+
   # Show a few key token colors
   key_tokens = [
     {Obelisk::TokenType::Keyword, "Keywords"},
     {Obelisk::TokenType::LiteralString, "Strings"},
     {Obelisk::TokenType::Comment, "Comments"},
     {Obelisk::TokenType::NameFunction, "Functions"},
-    {Obelisk::TokenType::LiteralNumber, "Numbers"}
+    {Obelisk::TokenType::LiteralNumber, "Numbers"},
   ]
-  
+
   key_tokens.each do |token_type, label|
     entry = style.get(token_type)
     if entry.color

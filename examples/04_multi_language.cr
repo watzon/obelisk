@@ -9,10 +9,10 @@ crystal_code = %q(
 class Point
   getter x : Float64
   getter y : Float64
-  
+
   def initialize(@x : Float64, @y : Float64)
   end
-  
+
   def distance_to(other : Point) : Float64
     Math.sqrt((other.x - @x) ** 2 + (other.y - @y) ** 2)
   end
@@ -80,7 +80,7 @@ It will be rendered as-is, preserving formatting:
   - Indentation
   - Line breaks
   - Special characters: <>&"'
-  
+
 But no syntax coloring will be applied.
 )
 
@@ -89,10 +89,10 @@ puts Obelisk.highlight(plain_text, "text", "terminal", "github")
 puts "\n=== Language Detection Example ==="
 # Show how to detect language based on file extension
 files = {
-  "app.cr" => "crystal",
-  "config.json" => "json", 
+  "app.cr"       => "crystal",
+  "config.json"  => "json",
   "settings.yml" => "yaml",
-  "readme.txt" => "text"
+  "readme.txt"   => "text",
 }
 
 files.each do |filename, expected_lang|
@@ -100,7 +100,7 @@ files.each do |filename, expected_lang|
   lexer = Obelisk::Registry.lexers.all.find do |l|
     l.matches_filename?(filename)
   end
-  
+
   detected = lexer ? lexer.name : "unknown"
   status = detected == expected_lang ? "✓" : "✗"
   puts "#{status} #{filename} -> #{detected}"
@@ -110,8 +110,8 @@ puts "\n=== HTML Output Comparison ==="
 # Generate HTML for each language
 sample_code = {
   "crystal" => "def hello\n  puts \"Hello!\"\nend",
-  "json" => '{"message": "Hello!"}',
-  "yaml" => "message: Hello!\ncount: 42"
+  "json"    => "{\"message\": \"Hello!\"}",
+  "yaml"    => "message: Hello!\ncount: 42",
 }
 
 sample_code.each do |lang, code|
