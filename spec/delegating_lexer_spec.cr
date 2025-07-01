@@ -75,7 +75,7 @@ describe Obelisk::DelegatingLexer do
   end
 
   describe "delegation" do
-    pending "delegates to embedded lexers # FIXME: This test triggers debugger breakpoint" do
+    it "delegates to embedded lexers" do
       markdown = TestMarkdownLexer.new
       
       # Add a detector for Crystal code blocks

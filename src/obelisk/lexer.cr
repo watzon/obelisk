@@ -606,6 +606,61 @@ module Obelisk
     end
   end
 
+  # Simple iterator for single tokens (avoids Crystal bug with [token].each.as())
+  class SingleTokenIterator
+    include Iterator(Token)
+    
+    def initialize(@token : Token)
+      @yielded = false
+    end
+    
+    def next : Token | Iterator::Stop
+      if @yielded
+        stop
+      else
+        @yielded = true
+        @token
+      end
+    end
+  end
+
+  # Safe adapter to work around Crystal bug #14317 with RegexTokenIterator
+  # This pre-fetches tokens to avoid memory corruption when iterating
+  class SafeTokenIteratorAdapter
+    include Iterator(Token)
+    
+    def initialize(lexer : Lexer, text : String)
+      @tokens = [] of Token
+      @index = 0
+      
+      # Pre-fetch all tokens to avoid iterator issues
+      begin
+        iter = lexer.tokenize(text)
+        # Limit to prevent infinite loops
+        10000.times do
+          case token = iter.next
+          when Token
+            @tokens << token
+          when Iterator::Stop
+            break
+          end
+        end
+      rescue
+        # If tokenization fails, leave tokens empty
+      end
+    end
+    
+    def next : Token | Iterator::Stop
+      if @index < @tokens.size
+        token = @tokens[@index]
+        @index += 1
+        token
+      else
+        stop
+      end
+    end
+  end
+
   # Token iterator for delegating lexers
   class DelegatingTokenIterator
     include Iterator(Token)
@@ -628,7 +683,7 @@ module Obelisk
       rescue ex
         # If initialization fails, create a fallback segment
         @segments = [{
-          iterator: @lexer.base_lexer.tokenize(@text).as(TokenIterator),
+          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
           delimiter: nil.as(Token?)
         }]
         @finished = false  # We still have one segment to process
@@ -700,8 +755,9 @@ module Obelisk
             begin
               base_content = @text[last_pos...region.start_pos]
               unless base_content.empty?
+                # Use safe adapter for all lexers to avoid Crystal bug #14317
                 segments << {
-                  iterator: @lexer.base_lexer.tokenize(base_content).as(TokenIterator),
+                  iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, base_content).as(TokenIterator),
                   delimiter: nil.as(Token?)
                 }
               end
@@ -714,7 +770,7 @@ module Obelisk
           if start_token = region.start_token
             begin
               segments << {
-                iterator: [start_token].each.as(TokenIterator),
+                iterator: SingleTokenIterator.new(start_token).as(TokenIterator),
                 delimiter: nil.as(Token?)
               }
             rescue
@@ -726,8 +782,9 @@ module Obelisk
           begin
             content = region.content(@text)
             unless content.empty?
+              # Use safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator: region.lexer.tokenize(content).as(TokenIterator),
+                iterator: SafeTokenIteratorAdapter.new(region.lexer, content).as(TokenIterator),
                 delimiter: nil.as(Token?)
               }
             end
@@ -739,7 +796,7 @@ module Obelisk
           if end_token = region.end_token
             begin
               segments << {
-                iterator: [end_token].each.as(TokenIterator),
+                iterator: SingleTokenIterator.new(end_token).as(TokenIterator),
                 delimiter: nil.as(Token?)
               }
             rescue
@@ -755,8 +812,9 @@ module Obelisk
           begin
             remaining_content = @text[last_pos..]
             unless remaining_content.empty?
+              # Use safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator: @lexer.base_lexer.tokenize(remaining_content).as(TokenIterator),
+                iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, remaining_content).as(TokenIterator),
                 delimiter: nil.as(Token?)
               }
             end
@@ -767,7 +825,7 @@ module Obelisk
       rescue
         # If any major error occurs, create a fallback segment with the entire text
         segments = [{
-          iterator: @lexer.base_lexer.tokenize(@text).as(TokenIterator),
+          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
           delimiter: nil.as(Token?)
         }]
       end
