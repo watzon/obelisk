@@ -2,18 +2,18 @@
   <img src="./obelisk.svg" width="300" />
 </p>
 
-Obelisk is a Crystal syntax highlighting library inspired by [Chroma](https://github.com/alecthomas/chroma). Obelisk provides fast, extensible syntax highlighting for Crystal code and other languages.
+Obelisk is a Crystal syntax highlighting library inspired by [Chroma](https://github.com/alecthomas/chroma). It provides a performant, type-safe, and extensible syntax highlighting solution with support for multiple languages, themes, and output formats.
 
 ## Features
 
-- **Multi-language support**: Built-in lexers for Crystal, JSON, and YAML
+- **Multi-language support**: Built-in lexers for Crystal, JSON, YAML, and more
 - **Multiple output formats**: HTML, ANSI terminal colors, plain text, and JSON
-- **Customizable themes**: GitHub, Monokai, and Black & White themes included
-- **Theme serialization**: Load and export themes in JSON, TextMate (.tmTheme), and Chroma XML formats
-- **Cross-platform themes**: Use themes from VS Code, Sublime Text, and Go's Chroma highlighter
-- **Extensible architecture**: Easy to add new languages and formatters
+- **Theme ecosystem**: Compatible with TextMate, Sublime Text, VS Code, and Chroma themes
+- **Advanced lexing**: State machines, context-sensitive parsing, and delegating lexers
+- **Theme serialization**: Import/export themes in JSON, TextMate (.tmTheme), and Chroma XML formats
+- **Extensible architecture**: Easy to add new languages, formatters, and themes
 - **Type-safe design**: Leverages Crystal's type system for reliability
-- **Fast performance**: Efficient regex-based lexing
+- **Performance focused**: Hand-written lexers with compile-time optimizations
 
 ## Installation
 
@@ -126,10 +126,14 @@ Obelisk.save_theme(style, "exported.xml")       # Chroma XML format
 
 ## Supported Languages
 
+### Core Languages
 - **Crystal** (`.cr`) - Full syntax support including string interpolation, annotations, and Crystal-specific types
-- **JSON** (`.json`) - Complete JSON syntax with proper escape handling
+- **JSON** (`.json`) - Complete JSON syntax with proper escape handling  
 - **YAML** (`.yaml`, `.yml`) - YAML syntax including documents, anchors, and tags
 - **Plain Text** - Fallback for unsupported file types
+
+### Additional Languages
+More languages are being actively developed. See the [Roadmap](#roadmap) for upcoming language support.
 
 ## Available Themes
 
@@ -265,15 +269,16 @@ crystal run examples/00_quickstart.cr
   - [x] State machine support
   - [x] Iterator-based token streaming
   - [x] Basic state mutations (push/pop)
-  - [ ] Advanced state mutations (include, combined states)
-  - [ ] Delegating lexers for embedded languages
-  - [ ] Lexer composition and chaining
+  - [x] Advanced state mutations (include, combined states)
+  - [x] Delegating lexers for embedded languages
+  - [x] Lexer composition and chaining
 - [x] **Registry Pattern**
   - [x] Centralized management of lexers, formatters, and styles
   - [x] Name and alias support
   - [x] Dynamic registration
-  - [ ] Priority-based lexer selection
+  - [x] Priority-based lexer selection
   - [x] Content analysis for auto-detection
+  - [x] MIME type and filename pattern matching
 
 ### Language Support
 
@@ -282,14 +287,25 @@ crystal run examples/00_quickstart.cr
   - [x] JSON
   - [x] YAML
   - [x] Plain text
+- [ ] **Planned Languages**
+  - [ ] Ruby
+  - [ ] Python
+  - [ ] JavaScript/TypeScript
+  - [ ] Go
+  - [ ] Rust
+  - [ ] C/C++
+  - [ ] HTML/CSS
+  - [ ] Markdown
+  - [ ] SQL
+  - [ ] Shell/Bash
 - [x] **Language Features**
   - [x] Keywords and operators
   - [x] String literals with escape sequences
   - [x] Comments (single and multi-line)
   - [x] Numbers (integers, floats, hex, binary, octal)
   - [x] String interpolation (Crystal)
-  - [ ] Embedded language support
-  - [ ] Context-sensitive parsing
+  - [x] Embedded language support (via DelegatingLexer)
+  - [x] Context-sensitive parsing
 
 ### Output Formatters
 
@@ -338,8 +354,10 @@ crystal run examples/00_quickstart.cr
 - [x] **Memory Efficiency**
   - [x] Iterator-based token streaming
   - [x] Lazy regex compilation
+  - [x] Safe token iterator adapter (Crystal bug workaround)
 - [x] **Performance Features**
   - [x] Token coalescing
+  - [x] Token splitting utilities
   - [ ] Token size limits
   - [ ] Streaming optimizations
   - [ ] Parallel lexing support
@@ -361,6 +379,7 @@ crystal run examples/00_quickstart.cr
   - [x] JSON theme serialization
   - [ ] Pygments compatibility
   - [ ] TextMate grammar support
+  - [ ] Chroma XML lexer definitions (see [#1](https://github.com/watzon/obelisk/issues/1))
 
 ### Developer Experience
 
@@ -377,6 +396,19 @@ crystal run examples/00_quickstart.cr
   - [x] Integration tests
   - [ ] Performance benchmarks
   - [ ] Fuzzing tests
+
+### Known Issues & Future Work
+
+- [ ] **Crystal Compiler Bug Workarounds**
+  - [x] Iterator memory corruption workaround ([#2](https://github.com/watzon/obelisk/issues/2))
+  - [ ] Remove workarounds when Crystal bug #14317 is fixed
+- [ ] **Performance Improvements**
+  - [ ] Re-enable token coalescing
+  - [ ] Optimize large file handling
+- [ ] **Extended Language Support**
+  - [ ] XML lexer definitions support (Tartrazine compatibility)
+  - [ ] Hybrid approach: hand-written + XML lexers
+  - [ ] Code generation from XML definitions
 
 ## Contributing
 
