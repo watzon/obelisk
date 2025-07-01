@@ -6,6 +6,21 @@
   <a href="https://github.com/watzon/obelisk/actions/workflows/ci.yml">
     <img src="https://github.com/watzon/obelisk/workflows/CI/badge.svg" alt="CI Status" />
   </a>
+  <a href="https://codecov.io/gh/watzon/obelisk">
+    <img src="https://codecov.io/gh/watzon/obelisk/branch/main/graph/badge.svg" alt="Coverage" />
+  </a>
+  <a href="https://github.com/watzon/obelisk/releases">
+    <img src="https://img.shields.io/github/v/release/watzon/obelisk?sort=semver" alt="Release" />
+  </a>
+  <a href="https://crystal-lang.org">
+    <img src="https://img.shields.io/badge/crystal-%3E%3D1.9.2-blue.svg" alt="Crystal Version" />
+  </a>
+  <a href="https://github.com/watzon/obelisk/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/watzon/obelisk" alt="License" />
+  </a>
+  <a href="https://github.com/watzon/obelisk/stargazers">
+    <img src="https://img.shields.io/github/stars/watzon/obelisk?style=social" alt="GitHub Stars" />
+  </a>
 </p>
 
 Obelisk is a Crystal syntax highlighting library inspired by [Chroma](https://github.com/alecthomas/chroma). It provides a performant, type-safe, and extensible syntax highlighting solution with support for multiple languages, themes, and output formats.

@@ -3,8 +3,22 @@ name: CI
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'spec/**'
+      - 'examples/**'
+      - 'shard.yml'
+      - 'scripts/**'
+      - '.github/workflows/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'spec/**'
+      - 'examples/**'
+      - 'shard.yml'
+      - 'scripts/**'
+      - '.github/workflows/**'
 
 jobs:
   test:
