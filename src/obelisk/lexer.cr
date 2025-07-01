@@ -838,7 +838,12 @@ module Obelisk
   class PlainTextIterator
     include Iterator(Token)
 
-    def initialize(@text : String)
+    @text : String
+    @yielded : Bool
+
+    def initialize(text : String)
+      # Make a copy of the string to avoid reference issues
+      @text = text.dup
       @yielded = false
     end
 
@@ -870,7 +875,12 @@ module Obelisk
     @strategy : CompositionStrategy
 
     def initialize(@name : String, lexers : Array(Lexer), @strategy = CompositionStrategy::FirstMatch)
-      @lexers = lexers.map(&.as(Lexer))
+      # Create a new array to ensure proper typing without using problematic methods
+      temp_lexers = [] of Lexer
+      lexers.each do |lexer|
+        temp_lexers << lexer
+      end
+      @lexers = temp_lexers
     end
 
     def config : LexerConfig
@@ -1026,7 +1036,12 @@ module Obelisk
     @chain : Array(Lexer)
 
     def initialize(@name : String, chain : Array(Lexer))
-      @chain = chain.map(&.as(Lexer))
+      # Create a new array to ensure proper typing
+      temp_chain = [] of Lexer
+      chain.each do |lexer|
+        temp_chain << lexer
+      end
+      @chain = temp_chain
     end
 
     def config : LexerConfig
