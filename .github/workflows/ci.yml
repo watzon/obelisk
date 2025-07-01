@@ -93,10 +93,19 @@ jobs:
     - name: Run specs with coverage
       run: ./scripts/test.sh with-coverage
 
+    - name: Debug coverage files
+      run: |
+        echo "Coverage directory contents:"
+        ls -la coverage/
+        echo "Coverage report directory contents:"
+        ls -la coverage/report/ || echo "coverage/report/ doesn't exist"
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        files: ./coverage/report/cobertura.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+        directory: ./coverage/report/
+        files: "*.xml,*.json"
         fail_ci_if_error: false
 
   build:
