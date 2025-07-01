@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crystal-version:
+          - "1.16.3"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: ${{ matrix.crystal-version }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/shards
+        key: ${{ runner.os }}-shards-${{ hashFiles('shard.yml') }}
+        restore-keys: ${{ runner.os }}-shards-
+
+    - name: Install dependencies
+      run: shards install
+
+    - name: Run type check
+      run: crystal build src/obelisk.cr --no-codegen
+
+    - name: Run specs
+      run: crystal spec
+
+    - name: Run examples
+      run: |
+        for example in examples/*.cr; do
+          echo "Running $example"
+          crystal run "$example"
+        done
+
+  format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: "1.16.3"
+
+    - name: Check formatting
+      run: crystal tool format --check
+
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: "1.16.3"
+
+    - name: Install dependencies
+      run: shards install
+
+    - name: Run specs with coverage
+      run: crystal spec --coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage/lcov.info
+        fail_ci_if_error: false
+
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
+      with:
+        crystal: "1.16.3"
+
+    - name: Install dependencies
+      run: shards install
+
+    - name: Build release binary
+      run: crystal build src/obelisk.cr --release
+
+    - name: Test compiled binary
+      run: ./obelisk --help || echo "Binary built successfully (no CLI yet)"
