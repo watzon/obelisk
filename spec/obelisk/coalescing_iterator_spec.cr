@@ -73,15 +73,15 @@ describe Obelisk::CoalescingIterator do
     coalesced[0].value.should eq "\"Hello World\""
   end
 
-  it "works with wrap helper method" do
+  it "works with direct constructor" do
     tokens = [
       Obelisk::Token.new(Obelisk::TokenType::Comment, "# This"),
       Obelisk::Token.new(Obelisk::TokenType::Comment, " is"),
       Obelisk::Token.new(Obelisk::TokenType::Comment, " a comment"),
     ].each
 
-    wrapped = Obelisk::CoalescingIterator.wrap(tokens)
-    coalesced = wrapped.to_a
+    coalescing = Obelisk::CoalescingIterator.new(tokens)
+    coalesced = coalescing.to_a
 
     coalesced.size.should eq 1
     coalesced[0].value.should eq "# This is a comment"
