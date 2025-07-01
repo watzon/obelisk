@@ -79,7 +79,7 @@ jobs:
     - name: Build spec binary for coverage
       run: |
         mkdir -p coverage/bin
-        echo "require \"./spec/**\"" > "./coverage/bin/obelisk_spec.cr"
+        echo "require \"../../spec/**\"" > "./coverage/bin/obelisk_spec.cr"
         crystal build -Dstrict_multi_assign --error-on-warnings "./coverage/bin/obelisk_spec.cr" -o "./coverage/bin/obelisk_spec"
 
     - name: Run kcov coverage
