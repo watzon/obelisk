@@ -4,25 +4,25 @@ describe Obelisk::ThemeLoader do
   describe ".load_json" do
     it "loads a simple JSON theme" do
       json = {
-        "name" => "Test Theme",
+        "name"       => "Test Theme",
         "background" => "#ffffff",
-        "tokens" => {
+        "tokens"     => {
           "comment" => {
-            "color" => "#6a737d",
-            "italic" => true
+            "color"  => "#6a737d",
+            "italic" => true,
           },
           "keyword" => {
             "color" => "#d73a49",
-            "bold" => true
-          }
-        }
+            "bold"  => true,
+          },
+        },
       }.to_json
 
       style = Obelisk::ThemeLoader.load_from_string(json, Obelisk::ThemeLoader::Format::JSON, "test")
-      
+
       style.name.should eq("Test Theme")
       style.background.should eq(Obelisk::Color.from_hex("#ffffff"))
-      
+
       comment_style = style.get_direct(Obelisk::TokenType::Comment)
       comment_style.should_not be_nil
       comment_style.not_nil!.color.should eq(Obelisk::Color.from_hex("#6a737d"))
@@ -37,15 +37,15 @@ describe Obelisk::ThemeLoader do
     it "handles missing optional fields" do
       json = {
         "background" => "#000000",
-        "tokens" => {
+        "tokens"     => {
           "text" => {
-            "color" => "#ffffff"
-          }
-        }
+            "color" => "#ffffff",
+          },
+        },
       }.to_json
 
       style = Obelisk::ThemeLoader.load_from_string(json, Obelisk::ThemeLoader::Format::JSON, "minimal")
-      
+
       style.name.should eq("minimal")
       style.background.should eq(Obelisk::Color.from_hex("#000000"))
     end
@@ -59,11 +59,11 @@ describe Obelisk::ThemeLoader do
     it "raises error for unknown token type" do
       json = {
         "background" => "#ffffff",
-        "tokens" => {
+        "tokens"     => {
           "unknown_token" => {
-            "color" => "#ff0000"
-          }
-        }
+            "color" => "#ff0000",
+          },
+        },
       }.to_json
 
       expect_raises(Obelisk::ThemeError, /Unknown token type/) do
@@ -84,10 +84,10 @@ describe Obelisk::ThemeLoader do
         XML
 
       style = Obelisk::ThemeLoader.load_from_string(xml, Obelisk::ThemeLoader::Format::Chroma, "test")
-      
+
       style.name.should eq("chroma-test")
       style.background.should eq(Obelisk::Color.from_hex("#ffffff"))
-      
+
       comment_style = style.get_direct(Obelisk::TokenType::Comment)
       comment_style.should_not be_nil
       comment_style.not_nil!.color.should eq(Obelisk::Color.from_hex("#6a737d"))
@@ -111,9 +111,9 @@ describe Obelisk::ThemeLoader do
         XML
 
       style = Obelisk::ThemeLoader.load_from_string(xml, Obelisk::ThemeLoader::Format::Chroma, "test")
-      
+
       style.background.should eq(Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Background entry should set Text token
       text_style = style.get_direct(Obelisk::TokenType::Text)
       text_style.should_not be_nil
@@ -135,9 +135,9 @@ describe Obelisk::ThemeLoader do
   describe ".detect_format" do
     it "detects JSON format for .json files with Obelisk structure" do
       File.write("test_theme.json", {
-        "name" => "Test",
+        "name"       => "Test",
         "background" => "#ffffff",
-        "tokens" => {} of String => String
+        "tokens"     => {} of String => String,
       }.to_json)
 
       style = Obelisk::ThemeLoader.load("test_theme.json")
@@ -153,7 +153,7 @@ describe Obelisk::ThemeLoader do
           <entry type="Keyword" style="#ff0000"/>
         </style>
         XML
-      
+
       File.write("test_theme.xml", xml)
 
       style = Obelisk::ThemeLoader.load("test_theme.xml")
@@ -175,17 +175,17 @@ describe Obelisk::ThemeLoader do
       # Test a few key mappings
       json = {
         "background" => "#ffffff",
-        "tokens" => {
-          "comment.single" => {"color" => "#ff0000"},
+        "tokens"     => {
+          "comment.single"        => {"color" => "#ff0000"},
           "literal.string.double" => {"color" => "#00ff00"},
-          "keyword.reserved" => {"color" => "#0000ff"},
-          "name.function" => {"color" => "#ffff00"},
-          "literal.number.hex" => {"color" => "#ff00ff"}
-        }
+          "keyword.reserved"      => {"color" => "#0000ff"},
+          "name.function"         => {"color" => "#ffff00"},
+          "literal.number.hex"    => {"color" => "#ff00ff"},
+        },
       }.to_json
 
       style = Obelisk::ThemeLoader.load_from_string(json, Obelisk::ThemeLoader::Format::JSON, "test")
-      
+
       style.get_direct(Obelisk::TokenType::CommentSingle).should_not be_nil
       style.get_direct(Obelisk::TokenType::LiteralStringDouble).should_not be_nil
       style.get_direct(Obelisk::TokenType::KeywordReserved).should_not be_nil

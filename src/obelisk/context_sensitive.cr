@@ -9,7 +9,7 @@ module Obelisk
     getter history : Array(Token)
     getter look_ahead_cache : Hash(Int32, String?)
 
-    def initialize(@state : LexerState, @text : String, @position : Int32, 
+    def initialize(@state : LexerState, @text : String, @position : Int32,
                    @history = [] of Token, @look_ahead_cache = {} of Int32 => String?)
     end
 
@@ -50,7 +50,7 @@ module Obelisk
     # Get current column number (1-based)
     def column_number : Int32
       return @position + 1 if @position == 0
-      
+
       last_newline = @text.rindex('\n', @position - 1)
       if last_newline
         @position - last_newline
@@ -112,7 +112,7 @@ module Obelisk
     getter priority : Int32
     getter description : String
 
-    def initialize(@pattern : Regex, @action : RuleAction, 
+    def initialize(@pattern : Regex, @action : RuleAction,
                    @condition : Proc(ParsingContext, Bool)? = nil,
                    @priority = 0, @description = "")
     end
@@ -122,7 +122,7 @@ module Obelisk
       remaining = context.state.remaining
       return nil unless match_data = @pattern.match(remaining, 0)
       return nil unless match_data.begin(0) == 0
-      
+
       # Check context condition if present
       if condition = @condition
         return nil unless condition.call(context)
@@ -152,7 +152,7 @@ module Obelisk
 
     # Create condition that checks look-behind text
     def self.preceded_by(pattern : Regex) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         look_behind = context.look_behind(50)
         if match = pattern.match(look_behind)
           match.end(0) == look_behind.size
@@ -164,7 +164,7 @@ module Obelisk
 
     # Create condition that checks look-ahead text
     def self.followed_by(pattern : Regex) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         look_ahead = context.look_ahead(50)
         if match = pattern.match(look_ahead)
           match.begin(0) == 0
@@ -186,14 +186,14 @@ module Obelisk
 
     # Create condition that checks recent token history
     def self.recent_token_type(type : TokenType, max_lookback = 5) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         context.any_recent_token?(max_lookback) { |token| token.type == type }
       }
     end
 
     # Create condition that checks nesting level
     def self.nesting_level_equals(level : Int32, open_types : Array(TokenType), close_types : Array(TokenType)) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         context.nesting_level(open_types, close_types) == level
       }
     end
@@ -205,14 +205,14 @@ module Obelisk
 
     # Combine multiple conditions with AND logic
     def self.all_of(*conditions : Proc(ParsingContext, Bool)) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         conditions.all? { |condition| condition.call(context) }
       }
     end
 
     # Combine multiple conditions with OR logic
     def self.any_of(*conditions : Proc(ParsingContext, Bool)) : Proc(ParsingContext, Bool)
-      ->(context : ParsingContext) { 
+      ->(context : ParsingContext) {
         conditions.any? { |condition| condition.call(context) }
       }
     end
@@ -237,7 +237,7 @@ module Obelisk
     # Add a token to the history
     def add_token(token : Token) : Nil
       @history << token
-      
+
       # Trim history if it gets too large
       if @history.size > @max_history_size
         @history.shift(@history.size - @max_history_size)
@@ -247,7 +247,7 @@ module Obelisk
     # Log a state transition
     def log_transition(from : String, to : String, position : Int32) : Nil
       @state_transition_log << {from: from, to: to, position: position}
-      
+
       # Keep transition log reasonable size
       if @state_transition_log.size > @max_history_size
         @state_transition_log.shift(@state_transition_log.size - @max_history_size)
@@ -274,9 +274,9 @@ module Obelisk
     # Get statistics about the parsing session
     def stats : Hash(String, Int32)
       {
-        "total_tokens" => @history.size,
+        "total_tokens"      => @history.size,
         "total_transitions" => @state_transition_log.size,
-        "unique_states" => @state_transition_log.map(&.[:to]).uniq.size
+        "unique_states"     => @state_transition_log.map(&.[:to]).uniq.size,
       }
     end
   end
@@ -287,7 +287,7 @@ module Obelisk
     def self.matches_at_offset(text : String, position : Int32, offset : Int32, pattern : Regex) : Bool
       target_pos = position + offset
       return false if target_pos < 0 || target_pos >= text.size
-      
+
       if match = pattern.match(text, target_pos)
         match.begin(0) == target_pos
       else
@@ -299,7 +299,7 @@ module Obelisk
     def self.find_in_window(text : String, position : Int32, window_size : Int32, pattern : Regex) : Array(Regex::MatchData)
       end_pos = Math.min(text.size, position + window_size)
       window = text[position...end_pos]
-      
+
       matches = [] of Regex::MatchData
       pos = 0
       while pos < window.size
@@ -327,10 +327,10 @@ module Obelisk
     # Find the matching closing delimiter
     def self.find_matching_close(text : String, position : Int32, open_char : Char, close_char : Char) : Int32?
       return nil unless text[position] == open_char
-      
+
       balance = 1
       pos = position + 1
-      
+
       while pos < text.size && balance > 0
         char = text[pos]
         balance += 1 if char == open_char
@@ -338,7 +338,7 @@ module Obelisk
         return pos if balance == 0
         pos += 1
       end
-      
+
       nil
     end
 
@@ -346,7 +346,7 @@ module Obelisk
     def self.extract_balanced_content(text : String, position : Int32, open_char : Char, close_char : Char) : String?
       close_pos = find_matching_close(text, position, open_char, close_char)
       return nil unless close_pos
-      
+
       text[(position + 1)...close_pos]
     end
   end
@@ -382,19 +382,19 @@ module Obelisk
     def rules : Hash(String, Array(LexerRule))
       # Convert context-aware rules to regular rules for compatibility
       result = {} of String => Array(LexerRule)
-      
+
       @base_rules.each do |state, context_rules|
         result[state] = context_rules.map do |context_rule|
           LexerRule.new(context_rule.pattern, context_rule.action)
         end
       end
-      
+
       # Add fallback rules
       @fall_through_rules.each do |state, fallback_rules|
         result[state] ||= [] of LexerRule
         result[state].concat(fallback_rules)
       end
-      
+
       result
     end
 
@@ -407,14 +407,14 @@ module Obelisk
     def find_context_match(context : ParsingContext) : {ContextAwareRule, Regex::MatchData}?
       state_name = context.state.current_state
       context_rules = @base_rules[state_name]? || [] of ContextAwareRule
-      
+
       # Try context-aware rules first (already sorted by priority)
       context_rules.each do |rule|
         if match = rule.match(context)
           return {rule, match}
         end
       end
-      
+
       nil
     end
 
@@ -457,14 +457,14 @@ module Obelisk
         if context_match = @lexer.find_context_match(context)
           rule, match = context_match
           matched_text = match[0]
-          
+
           # Execute the rule action
           groups = match.to_a[1..].map(&.to_s)
           tokens = execute_action(rule.action, matched_text, groups)
-          
+
           # Advance the position
           @state.advance(matched_text.size)
-          
+
           # Add tokens to history and queue
           if tokens.empty?
             next # No tokens generated, try again
@@ -475,18 +475,18 @@ module Obelisk
             @token_queue.concat(tokens)
             return first_token
           end
-        # Fall back to regular lexer rules
+          # Fall back to regular lexer rules
         elsif match_data = @lexer.find_match(@state)
           rule, match = match_data
           matched_text = match[0]
-          
+
           # Execute the rule action
           groups = match.to_a[1..].map(&.to_s)
           tokens = execute_action(rule.action, matched_text, groups)
-          
+
           # Advance the position
           @state.advance(matched_text.size)
-          
+
           # Add tokens to history and queue
           if tokens.empty?
             next # No tokens generated, try again
@@ -523,29 +523,29 @@ module Obelisk
   # Helper module for creating common context-aware rules
   module ContextRuleHelpers
     # Create rule for string interpolation
-    def self.string_interpolation_rule(start_pattern : Regex, state_to_push : String, 
-                                     token_type : TokenType = TokenType::LiteralStringInterpol) : ContextAwareRule
+    def self.string_interpolation_rule(start_pattern : Regex, state_to_push : String,
+                                       token_type : TokenType = TokenType::LiteralStringInterpol) : ContextAwareRule
       condition = ContextConditions.in_state("string")
       action = RuleActions.push(state_to_push, token_type)
-      
+
       ContextAwareRule.new(
-        start_pattern, 
-        action, 
-        condition, 
+        start_pattern,
+        action,
+        condition,
         priority: 100,
         description: "String interpolation start"
       )
     end
 
     # Create rule for comment that varies by language context
-    def self.contextual_comment_rule(pattern : Regex, 
-                                   context_conditions : Hash(String, TokenType)) : ContextAwareRule
+    def self.contextual_comment_rule(pattern : Regex,
+                                     context_conditions : Hash(String, TokenType)) : ContextAwareRule
       condition = ->(context : ParsingContext) {
         context_conditions.any? do |state, _|
           context.state.in_state?(state)
         end
       }
-      
+
       action = ->(match : String, state : LexerState, groups : Array(String)) {
         # Determine token type based on current state
         token_type = TokenType::Comment
@@ -557,7 +557,7 @@ module Obelisk
         end
         [Token.new(token_type, match)]
       }
-      
+
       ContextAwareRule.new(
         pattern,
         action,
@@ -569,53 +569,53 @@ module Obelisk
 
     # Create rule for balanced bracket tracking
     def self.bracket_tracking_rule(open_pattern : Regex, close_pattern : Regex,
-                                 open_type : TokenType, close_type : TokenType,
-                                 state_to_push : String? = nil) : Array(ContextAwareRule)
+                                   open_type : TokenType, close_type : TokenType,
+                                   state_to_push : String? = nil) : Array(ContextAwareRule)
       rules = [] of ContextAwareRule
-      
+
       # Opening bracket rule
       open_action = if state_to_push
-        RuleActions.push(state_to_push, open_type)
-      else
-        open_type
-      end
-      
+                      RuleActions.push(state_to_push, open_type)
+                    else
+                      open_type
+                    end
+
       rules << ContextAwareRule.new(
         open_pattern,
         open_action,
         priority: 90,
         description: "Opening bracket"
       )
-      
+
       # Closing bracket rule
       close_action = if state_to_push
-        RuleActions.pop(close_type)
-      else
-        close_type
-      end
-      
+                       RuleActions.pop(close_type)
+                     else
+                       close_type
+                     end
+
       rules << ContextAwareRule.new(
         close_pattern,
         close_action,
         priority: 90,
         description: "Closing bracket"
       )
-      
+
       rules
     end
 
     # Create rule for template language expressions
     def self.template_expression_rule(start_delim : String, end_delim : String,
-                                    template_state : String, expr_state : String) : Array(ContextAwareRule)
+                                      template_state : String, expr_state : String) : Array(ContextAwareRule)
       rules = [] of ContextAwareRule
-      
+
       start_pattern = Regex.new(Regex.escape(start_delim))
       end_pattern = Regex.new(Regex.escape(end_delim))
-      
+
       # Start expression rule
       start_condition = ContextConditions.in_state(template_state)
       start_action = RuleActions.push(expr_state, TokenType::LiteralStringInterpol)
-      
+
       rules << ContextAwareRule.new(
         start_pattern,
         start_action,
@@ -623,11 +623,11 @@ module Obelisk
         priority: 100,
         description: "Template expression start"
       )
-      
+
       # End expression rule
       end_condition = ContextConditions.in_state(expr_state)
       end_action = RuleActions.pop(TokenType::LiteralStringInterpol)
-      
+
       rules << ContextAwareRule.new(
         end_pattern,
         end_action,
@@ -635,22 +635,22 @@ module Obelisk
         priority: 100,
         description: "Template expression end"
       )
-      
+
       rules
     end
 
     # Create rule that depends on recent token history
     def self.history_dependent_rule(pattern : Regex, required_recent_type : TokenType,
-                                  success_type : TokenType, failure_type : TokenType,
-                                  max_lookback = 5) : ContextAwareRule
+                                    success_type : TokenType, failure_type : TokenType,
+                                    max_lookback = 5) : ContextAwareRule
       condition = ContextConditions.recent_token_type(required_recent_type, max_lookback)
-      
+
       action = RuleActions.conditional(
         condition,
         success_type,
         failure_type
       )
-      
+
       ContextAwareRule.new(
         pattern,
         action,
@@ -675,30 +675,30 @@ module Obelisk
     private def setup_common_rules
       # String interpolation in double quotes
       add_context_rule("root", ContextAwareRule.new(
-        /"/, 
+        /"/,
         RuleActions.push("string", TokenType::LiteralStringDouble),
         priority: 100
       ))
-      
+
       add_context_rule("string", ContextAwareRule.new(
-        /"/, 
+        /"/,
         RuleActions.pop(TokenType::LiteralStringDouble),
         priority: 100
       ))
-      
+
       # String interpolation
       add_context_rule("string", ContextAwareRule.new(
         /\$\{/,
         RuleActions.push("interpolation", TokenType::LiteralStringInterpol),
         priority: 100
       ))
-      
+
       add_context_rule("interpolation", ContextAwareRule.new(
         /\}/,
         RuleActions.pop(TokenType::LiteralStringInterpol),
         priority: 100
       ))
-      
+
       # Context-aware comments
       comment_condition = ContextConditions.not_in_state("string")
       add_context_rule("root", ContextAwareRule.new(
@@ -707,40 +707,40 @@ module Obelisk
         comment_condition,
         priority: 80
       ))
-      
+
       add_context_rule("root", ContextAwareRule.new(
         /\/\*.*?\*\//m,
         TokenType::CommentMultiline,
         comment_condition,
         priority: 80
       ))
-      
+
       # Bracket matching with context (simple punctuation, no state changes)
       add_context_rule("root", ContextAwareRule.new(
         /\{/,
         TokenType::Punctuation,
         priority: 90
       ))
-      
+
       add_context_rule("root", ContextAwareRule.new(
         /\}/,
-        TokenType::Punctuation, 
+        TokenType::Punctuation,
         priority: 90
       ))
-      
+
       # Also add rules for block state in case we get there
       add_context_rule("block", ContextAwareRule.new(
         /\{/,
         TokenType::Punctuation,
         priority: 90
       ))
-      
+
       add_context_rule("block", ContextAwareRule.new(
         /\}/,
         TokenType::Punctuation,
         priority: 90
       ))
-      
+
       # Fall-through rules for basic tokenization
       add_fallback_rule("root", LexerRule.new(/[a-zA-Z_][a-zA-Z0-9_]*/, TokenType::Name))
       add_fallback_rule("root", LexerRule.new(/\s+/, TokenType::Text))

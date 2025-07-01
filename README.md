@@ -287,17 +287,16 @@ crystal run examples/00_quickstart.cr
   - [x] JSON
   - [x] YAML
   - [x] Plain text
-- [ ] **Planned Languages**
-  - [ ] Ruby
-  - [ ] Python
-  - [ ] JavaScript/TypeScript
-  - [ ] Go
-  - [ ] Rust
-  - [ ] C/C++
-  - [ ] HTML/CSS
-  - [ ] Markdown
-  - [ ] SQL
-  - [ ] Shell/Bash
+  - [x] Ruby
+  - [x] Python
+  - [x] JavaScript/TypeScript
+  - [x] Go
+  - [x] Rust
+  - [x] C/C++
+  - [x] HTML/CSS
+  - [x] Markdown
+  - [x] SQL
+  - [x] Shell/Bash
 - [x] **Language Features**
   - [x] Keywords and operators
   - [x] String literals with escape sequences

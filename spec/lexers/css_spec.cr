@@ -11,18 +11,18 @@ describe Obelisk::Lexers::CSS do
       #id { }
       div.class#id { }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       # Element selector
       tag_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameTag }
       tag_tokens.map(&.value).should contain("body")
       tag_tokens.map(&.value).should contain("div")
-      
+
       # Class selector
       class_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameClass }
       class_tokens.map(&.value).should contain(".class")
-      
+
       # ID selector
       id_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameTag && t.value.starts_with?("#") }
       id_tokens.map(&.value).should contain("#id")
@@ -37,9 +37,9 @@ describe Obelisk::Lexers::CSS do
         font-size: 1.5rem;
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       # Properties
       prop_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameProperty }
       prop_values = prop_tokens.map(&.value)
@@ -47,7 +47,7 @@ describe Obelisk::Lexers::CSS do
       prop_values.should contain("background-color")
       prop_values.should contain("margin")
       prop_values.should contain("font-size")
-      
+
       # Numbers with units
       number_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralNumber }
       number_values = number_tokens.map(&.value)
@@ -66,15 +66,15 @@ describe Obelisk::Lexers::CSS do
         fill: hsl(120, 100%, 50%);
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       # Hex colors
       hex_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralNumberHex }
       hex_values = hex_tokens.map(&.value)
       hex_values.should contain("#fff")
       hex_values.should contain("#123456")
-      
+
       # Color functions
       func_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameFunction }
       func_values = func_tokens.map(&.value)
@@ -91,9 +91,9 @@ describe Obelisk::Lexers::CSS do
       div::before { }
       input::placeholder { }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       pseudo_tokens = tokens.select { |t| t.type == Obelisk::TokenType::KeywordPseudo }
       pseudo_values = pseudo_tokens.map(&.value)
       pseudo_values.should contain(":hover")
@@ -114,9 +114,9 @@ describe Obelisk::Lexers::CSS do
         to { opacity: 1; }
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       at_rule_tokens = tokens.select { |t| t.type == Obelisk::TokenType::KeywordNamespace }
       at_rule_values = at_rule_tokens.map(&.value)
       at_rule_values.should contain("@import")
@@ -132,9 +132,9 @@ describe Obelisk::Lexers::CSS do
         color: red;
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       comment_tokens = tokens.select { |t| t.type == Obelisk::TokenType::CommentMultiline }
       comment_tokens.should_not be_empty
       # Comments are tokenized as multiple tokens, check if any contain the text
@@ -149,9 +149,9 @@ describe Obelisk::Lexers::CSS do
       div[class*="container"] { }
       [data-value='test'] { }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       # Attribute names
       attr_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameAttribute }
       attr_values = attr_tokens.map(&.value)
@@ -170,9 +170,9 @@ describe Obelisk::Lexers::CSS do
         content: url("image.png");
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       func_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameFunction }
       func_values = func_tokens.map(&.value)
       func_values.should contain("rotate")
@@ -185,7 +185,7 @@ describe Obelisk::Lexers::CSS do
     it "tokenizes !important" do
       code = ".test { color: red !important; }"
       tokens = lexer.tokenize(code).to_a
-      
+
       important_tokens = tokens.select { |t| t.type == Obelisk::TokenType::KeywordReserved }
       important_tokens.should_not be_empty
       important_tokens.first.value.should match(/!\s*important/)
@@ -199,9 +199,9 @@ describe Obelisk::Lexers::CSS do
         background: url("path/to/image.jpg");
       }
       CSS
-      
+
       tokens = lexer.tokenize(code).to_a
-      
+
       string_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralStringDouble || t.type == Obelisk::TokenType::LiteralStringSingle }
       string_tokens.should_not be_empty
     end
@@ -218,7 +218,7 @@ describe Obelisk::Lexers::CSS do
         max-width: 1200px;
       }
       CSS
-      
+
       score = lexer.analyze(css)
       score.should be > 0.7
     end

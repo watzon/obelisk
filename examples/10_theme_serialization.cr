@@ -44,7 +44,7 @@ puts "4. Saving themes to files:"
 begin
   Obelisk.save_theme(monokai, "monokai_export.json")
   puts "   ✓ Saved to monokai_export.json"
-  
+
   Obelisk.save_theme(monokai, "monokai_export.tmtheme")
   puts "   ✓ Saved to monokai_export.tmtheme"
 rescue ex
@@ -59,7 +59,7 @@ begin
     loaded_theme = Obelisk.load_theme("monokai_export.json")
     puts "   ✓ Loaded theme: #{loaded_theme.name}"
     puts "   Background: #{loaded_theme.background.to_hex}"
-    
+
     # Test that styles are preserved
     comment_style = loaded_theme.get(Obelisk::TokenType::Comment)
     if comment_style
@@ -117,7 +117,7 @@ puts "   Background: #{custom_theme.background.to_hex}"
 begin
   Obelisk.save_theme(custom_theme, "custom_theme.json")
   puts "   ✓ Saved custom theme to custom_theme.json"
-  
+
   Obelisk.save_theme(custom_theme, "custom_theme.tmtheme")
   puts "   ✓ Saved custom theme to custom_theme.tmtheme"
 rescue ex
@@ -153,16 +153,16 @@ puts
 puts "8. Theme format conversion:"
 if File.exists?("custom_theme.json")
   puts "   JSON → tmTheme conversion:"
-  
+
   # Load from JSON
   json_theme = Obelisk.load_theme("custom_theme.json")
   puts "   ✓ Loaded from JSON: #{json_theme.name}"
-  
+
   # Export to tmTheme
   tmtheme_content = Obelisk.export_theme_tmtheme(json_theme)
   File.write("converted_theme.tmtheme", tmtheme_content)
   puts "   ✓ Converted and saved as converted_theme.tmTheme"
-  
+
   # Verify the conversion
   if File.exists?("converted_theme.tmtheme")
     file_size = File.size("converted_theme.tmtheme")
@@ -178,7 +178,7 @@ if File.exists?("custom_theme.tmtheme")
     tmtheme_loaded = Obelisk.load_theme("custom_theme.tmtheme")
     puts "   ✓ Loaded tmTheme: #{tmtheme_loaded.name}"
     puts "   Background: #{tmtheme_loaded.background.to_hex}"
-    
+
     # Compare with original
     if tmtheme_loaded.background == custom_theme.background
       puts "   ✓ Background color preserved"
@@ -193,8 +193,8 @@ puts
 
 # Cleanup
 puts "Cleaning up temporary files..."
-["monokai_export.json", "monokai_export.tmtheme", 
- "custom_theme.json", "custom_theme.tmtheme", 
+["monokai_export.json", "monokai_export.tmtheme",
+ "custom_theme.json", "custom_theme.tmtheme",
  "converted_theme.tmtheme"].each do |file|
   if File.exists?(file)
     File.delete(file)

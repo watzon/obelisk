@@ -9,81 +9,81 @@ module Obelisk
     # Scope to TokenType mapping for common TextMate scopes
     SCOPE_MAPPINGS = {
       # Comments
-      "comment" => TokenType::Comment,
-      "comment.line" => TokenType::CommentSingle,
+      "comment"       => TokenType::Comment,
+      "comment.line"  => TokenType::CommentSingle,
       "comment.block" => TokenType::CommentMultiline,
 
       # Strings
-      "string" => TokenType::LiteralString,
+      "string"               => TokenType::LiteralString,
       "string.quoted.single" => TokenType::LiteralStringSingle,
       "string.quoted.double" => TokenType::LiteralStringDouble,
-      "string.unquoted" => TokenType::LiteralStringOther,
-      "string.interpolated" => TokenType::LiteralStringInterpol,
-      "string.regexp" => TokenType::LiteralStringRegex,
+      "string.unquoted"      => TokenType::LiteralStringOther,
+      "string.interpolated"  => TokenType::LiteralStringInterpol,
+      "string.regexp"        => TokenType::LiteralStringRegex,
 
       # Numbers
-      "constant.numeric" => TokenType::LiteralNumber,
+      "constant.numeric"         => TokenType::LiteralNumber,
       "constant.numeric.integer" => TokenType::LiteralNumberInteger,
-      "constant.numeric.float" => TokenType::LiteralNumberFloat,
-      "constant.numeric.hex" => TokenType::LiteralNumberHex,
-      "constant.numeric.octal" => TokenType::LiteralNumberOct,
-      "constant.numeric.binary" => TokenType::LiteralNumberBin,
+      "constant.numeric.float"   => TokenType::LiteralNumberFloat,
+      "constant.numeric.hex"     => TokenType::LiteralNumberHex,
+      "constant.numeric.octal"   => TokenType::LiteralNumberOct,
+      "constant.numeric.binary"  => TokenType::LiteralNumberBin,
 
       # Keywords
-      "keyword" => TokenType::Keyword,
-      "keyword.control" => TokenType::KeywordReserved,
+      "keyword"          => TokenType::Keyword,
+      "keyword.control"  => TokenType::KeywordReserved,
       "keyword.operator" => TokenType::OperatorWord,
-      "keyword.other" => TokenType::Keyword,
+      "keyword.other"    => TokenType::Keyword,
 
       # Variables and names
-      "variable" => TokenType::NameVariable,
+      "variable"           => TokenType::NameVariable,
       "variable.parameter" => TokenType::NameVariable,
-      "variable.language" => TokenType::NameBuiltin,
-      "variable.other" => TokenType::NameVariable,
+      "variable.language"  => TokenType::NameBuiltin,
+      "variable.other"     => TokenType::NameVariable,
 
       # Functions
-      "entity.name.function" => TokenType::NameFunction,
-      "entity.name.class" => TokenType::NameClass,
-      "entity.name.type" => TokenType::NameClass,
-      "entity.name.namespace" => TokenType::NameNamespace,
-      "entity.name.tag" => TokenType::NameTag,
+      "entity.name.function"        => TokenType::NameFunction,
+      "entity.name.class"           => TokenType::NameClass,
+      "entity.name.type"            => TokenType::NameClass,
+      "entity.name.namespace"       => TokenType::NameNamespace,
+      "entity.name.tag"             => TokenType::NameTag,
       "entity.other.attribute-name" => TokenType::NameAttribute,
 
       # Constants
-      "constant" => TokenType::NameConstant,
-      "constant.language" => TokenType::NameBuiltin,
+      "constant"                  => TokenType::NameConstant,
+      "constant.language"         => TokenType::NameBuiltin,
       "constant.character.escape" => TokenType::LiteralStringEscape,
 
       # Storage (types, modifiers)
-      "storage" => TokenType::KeywordType,
-      "storage.type" => TokenType::KeywordType,
+      "storage"          => TokenType::KeywordType,
+      "storage.type"     => TokenType::KeywordType,
       "storage.modifier" => TokenType::KeywordReserved,
 
       # Support (built-ins)
-      "support" => TokenType::NameBuiltin,
+      "support"          => TokenType::NameBuiltin,
       "support.function" => TokenType::NameBuiltin,
-      "support.class" => TokenType::NameBuiltin,
-      "support.type" => TokenType::NameBuiltin,
+      "support.class"    => TokenType::NameBuiltin,
+      "support.type"     => TokenType::NameBuiltin,
       "support.constant" => TokenType::NameBuiltin,
 
       # Operators and punctuation
-      "keyword.operator" => TokenType::Operator,
-      "punctuation" => TokenType::Punctuation,
-      "punctuation.separator" => TokenType::Punctuation,
+      "keyword.operator"       => TokenType::Operator,
+      "punctuation"            => TokenType::Punctuation,
+      "punctuation.separator"  => TokenType::Punctuation,
       "punctuation.terminator" => TokenType::Punctuation,
 
       # Invalid/illegal
-      "invalid" => TokenType::Error,
-      "invalid.illegal" => TokenType::Error,
+      "invalid"            => TokenType::Error,
+      "invalid.illegal"    => TokenType::Error,
       "invalid.deprecated" => TokenType::Error,
 
       # Markup (for markdown, etc.)
-      "markup.heading" => TokenType::GenericHeading,
-      "markup.bold" => TokenType::GenericStrong,
-      "markup.italic" => TokenType::GenericEmph,
+      "markup.heading"   => TokenType::GenericHeading,
+      "markup.bold"      => TokenType::GenericStrong,
+      "markup.italic"    => TokenType::GenericEmph,
       "markup.underline" => TokenType::GenericEmph,
-      "markup.deleted" => TokenType::GenericDeleted,
-      "markup.inserted" => TokenType::GenericInserted,
+      "markup.deleted"   => TokenType::GenericDeleted,
+      "markup.inserted"  => TokenType::GenericInserted,
     }
 
     def initialize(@content : String)
@@ -104,7 +104,7 @@ module Obelisk
 
       # Parse the main dictionary
       theme_data = parse_dict(dict)
-      
+
       # Extract theme name
       theme_name = theme_data["name"]?.try(&.as(String)) || name
 

@@ -7,10 +7,10 @@ code = %q(
 class User
   property name : String
   property email : String
-  
+
   def initialize(@name, @email)
   end
-  
+
   def valid?
     !@name.empty? && @email.includes?("@")
   end
@@ -69,7 +69,7 @@ formatter = Obelisk::HTMLFormatter.new(with_classes: false)
 if lexer && style
   tokens = lexer.tokenize(code)
   highlighted_code = formatter.format(tokens, style)
-  
+
   html_page = <<-HTML
   <!DOCTYPE html>
   <html>
@@ -90,6 +90,6 @@ if lexer && style
   </body>
   </html>
   HTML
-  
+
   puts html_page
 end

@@ -5,7 +5,7 @@ describe Obelisk::ThemeExporter do
     it "exports a style to JSON format" do
       # Create a test style
       style = Obelisk::Style.new("Test Theme", Obelisk::Color.from_hex("#ffffff"))
-      style.set(Obelisk::TokenType::Comment, 
+      style.set(Obelisk::TokenType::Comment,
         Obelisk::StyleBuilder.new
           .color("#6a737d")
           .italic
@@ -21,7 +21,7 @@ describe Obelisk::ThemeExporter do
 
       json_data["name"].as_s.should eq("Test Theme")
       json_data["background"].as_s.should eq("#ffffff")
-      
+
       tokens = json_data["tokens"].as_h
       comment = tokens["comment"].as_h
       comment["color"].as_s.should eq("#6a737d")
@@ -34,10 +34,10 @@ describe Obelisk::ThemeExporter do
 
     it "exports pretty JSON when requested" do
       style = Obelisk::Style.new("Test", Obelisk::Color.from_hex("#000000"))
-      
+
       pretty_json = Obelisk::ThemeExporter.to_json(style, true)
       compact_json = Obelisk::ThemeExporter.to_json(style, false)
-      
+
       pretty_json.should contain("\n")
       pretty_json.should contain("  ")
       compact_json.should_not contain("\n")
@@ -57,7 +57,7 @@ describe Obelisk::ThemeExporter do
 
       json_string = Obelisk::ThemeExporter.to_json(style, false)
       json_data = JSON.parse(json_string)
-      
+
       text_style = json_data["tokens"]["text"].as_h
       text_style["color"].as_s.should eq("#000000")
       text_style["background"].as_s.should eq("#ffffff")
@@ -82,7 +82,7 @@ describe Obelisk::ThemeExporter do
           .build)
 
       xml = Obelisk::ThemeExporter.to_tmtheme(style)
-      
+
       xml.should contain("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
       xml.should contain("<plist version=\"1.0\">")
       xml.should contain("<key>name</key>")
@@ -97,7 +97,7 @@ describe Obelisk::ThemeExporter do
     it "includes UUID in exported tmTheme" do
       style = Obelisk::Style.new("Test", Obelisk::Color.from_hex("#ffffff"))
       xml = Obelisk::ThemeExporter.to_tmtheme(style)
-      
+
       xml.should contain("<key>uuid</key>")
       # Should contain a UUID pattern (8-4-4-4-12 hex digits with dashes)
       xml.should match(/<string>[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}<\/string>/)
@@ -106,7 +106,7 @@ describe Obelisk::ThemeExporter do
     it "escapes XML characters in theme name" do
       style = Obelisk::Style.new("Test & <Special> \"Theme\"", Obelisk::Color.from_hex("#ffffff"))
       xml = Obelisk::ThemeExporter.to_tmtheme(style)
-      
+
       xml.should contain("Test &amp; &lt;Special&gt; &quot;Theme&quot;")
       xml.should_not contain("Test & <Special> \"Theme\"")
     end
@@ -127,7 +127,7 @@ describe Obelisk::ThemeExporter do
           .build)
 
       xml = Obelisk::ThemeExporter.to_chroma(style)
-      
+
       xml.should contain("<style name=\"Test Theme\">")
       xml.should contain("</style>")
       xml.should contain("<entry type=\"Background\" style=\"bg:#ffffff\"/>")
@@ -147,7 +147,7 @@ describe Obelisk::ThemeExporter do
           .build)
 
       xml = Obelisk::ThemeExporter.to_chroma(style)
-      
+
       xml.should contain("<style name=\"Complex\">")
       xml.should contain("<entry type=\"Background\" style=\"bg:#1e1e1e\"/>")
       xml.should contain("<entry type=\"NameFunction\" style=\"bold italic underline #dcdcaa bg:#2d2d30\"/>")
@@ -157,27 +157,27 @@ describe Obelisk::ThemeExporter do
   describe ".save" do
     it "saves JSON format to file" do
       style = Obelisk::Style.new("Save Test", Obelisk::Color.from_hex("#ffffff"))
-      
+
       Obelisk::ThemeExporter.save(style, "test_save.json")
-      
+
       File.exists?("test_save.json").should be_true
       content = File.read("test_save.json")
       content.should contain("Save Test")
       content.should contain("#ffffff")
-      
+
       File.delete("test_save.json")
     end
 
     it "saves tmTheme format to file" do
       style = Obelisk::Style.new("tmTheme Test", Obelisk::Color.from_hex("#000000"))
-      
+
       Obelisk::ThemeExporter.save(style, "test_save.tmtheme")
-      
+
       File.exists?("test_save.tmtheme").should be_true
       content = File.read("test_save.tmtheme")
       content.should contain("<?xml version")
       content.should contain("tmTheme Test")
-      
+
       File.delete("test_save.tmtheme")
     end
 
@@ -185,30 +185,30 @@ describe Obelisk::ThemeExporter do
       style = Obelisk::Style.new("Chroma Test", Obelisk::Color.from_hex("#000000"))
       style.set(Obelisk::TokenType::Comment,
         Obelisk::StyleBuilder.new.color("#008000").build)
-      
+
       Obelisk::ThemeExporter.save(style, "test_save.xml")
-      
+
       File.exists?("test_save.xml").should be_true
       content = File.read("test_save.xml")
       content.should contain("<style name=\"Chroma Test\">")
       content.should contain("bg:#000000")
       content.should contain("Comment")
-      
+
       File.delete("test_save.xml")
     end
 
     it "auto-detects format from file extension" do
       style = Obelisk::Style.new("Auto Detect", Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Test different extensions
       Obelisk::ThemeExporter.save(style, "auto.json")
       File.read("auto.json").should contain("\"name\"")
       File.delete("auto.json")
-      
+
       Obelisk::ThemeExporter.save(style, "auto.tmtheme")
       File.read("auto.tmtheme").should contain("<?xml version")
       File.delete("auto.tmtheme")
-      
+
       Obelisk::ThemeExporter.save(style, "auto.xml")
       File.read("auto.xml").should contain("<style name=")
       File.delete("auto.xml")
@@ -216,13 +216,13 @@ describe Obelisk::ThemeExporter do
 
     it "overrides auto-detection with explicit format" do
       style = Obelisk::Style.new("Override", Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Save as JSON even though extension is .xml
       Obelisk::ThemeExporter.save(style, "override.xml", Obelisk::ThemeLoader::Format::JSON)
       content = File.read("override.xml")
       content.should contain("\"name\"")
       content.should_not contain("<style")
-      
+
       File.delete("override.xml")
     end
   end
@@ -230,9 +230,9 @@ describe Obelisk::ThemeExporter do
   describe "token type string conversion" do
     it "converts all TokenType values to correct strings" do
       style = Obelisk::Style.new("Mapping Test", Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Test a few key token types
-      style.set(Obelisk::TokenType::CommentSingle, 
+      style.set(Obelisk::TokenType::CommentSingle,
         Obelisk::StyleBuilder.new.color("#ff0000").build)
       style.set(Obelisk::TokenType::LiteralStringDouble,
         Obelisk::StyleBuilder.new.color("#00ff00").build)
@@ -241,7 +241,7 @@ describe Obelisk::ThemeExporter do
 
       json_string = Obelisk::ThemeExporter.to_json(style, false)
       json_data = JSON.parse(json_string)
-      
+
       tokens = json_data["tokens"].as_h
       tokens.has_key?("comment.single").should be_true
       tokens.has_key?("literal.string.double").should be_true

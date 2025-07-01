@@ -91,7 +91,7 @@ describe Obelisk::StyleEntry do
     it "merges two entries correctly" do
       entry1 = Obelisk::StyleEntry.new(color: Obelisk::Color::RED, bold: Obelisk::Trilean::Yes)
       entry2 = Obelisk::StyleEntry.new(background: Obelisk::Color::BLUE, italic: Obelisk::Trilean::Yes)
-      
+
       merged = entry1.merge(entry2)
       merged.color.should eq Obelisk::Color::RED
       merged.background.should eq Obelisk::Color::BLUE
@@ -102,7 +102,7 @@ describe Obelisk::StyleEntry do
     it "allows second entry to override first" do
       entry1 = Obelisk::StyleEntry.new(color: Obelisk::Color::RED)
       entry2 = Obelisk::StyleEntry.new(color: Obelisk::Color::BLUE)
-      
+
       merged = entry1.merge(entry2)
       merged.color.should eq Obelisk::Color::BLUE
     end
@@ -115,7 +115,7 @@ describe Obelisk::Style do
       style = Obelisk::Style.new("test")
       entry = Obelisk::StyleEntry.new(color: Obelisk::Color::RED)
       style.set(Obelisk::TokenType::Keyword, entry)
-      
+
       result = style.get(Obelisk::TokenType::Keyword)
       result.color.should eq Obelisk::Color::RED
     end
@@ -124,7 +124,7 @@ describe Obelisk::Style do
       style = Obelisk::Style.new("test")
       parent_entry = Obelisk::StyleEntry.new(color: Obelisk::Color::RED)
       style.set(Obelisk::TokenType::Keyword, parent_entry)
-      
+
       result = style.get(Obelisk::TokenType::KeywordConstant)
       result.color.should eq Obelisk::Color::RED
     end
@@ -133,7 +133,7 @@ describe Obelisk::Style do
       style = Obelisk::Style.new("test")
       text_entry = Obelisk::StyleEntry.new(color: Obelisk::Color::BLACK)
       style.set(Obelisk::TokenType::Text, text_entry)
-      
+
       result = style.get(Obelisk::TokenType::Error)
       result.color.should eq Obelisk::Color::BLACK
     end

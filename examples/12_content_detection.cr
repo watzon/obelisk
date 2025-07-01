@@ -10,7 +10,7 @@ require "http/server"
 class HelloWorld
   def initialize(@name : String)
   end
-  
+
   def greet
     puts "Hello, #{@name}!"
   end
@@ -66,19 +66,19 @@ puts "=== Content-based Language Detection ==="
 
 # Test each code snippet
 samples = {
-  "Crystal code" => crystal_code,
-  "JSON code" => json_code,
-  "YAML code" => yaml_code,
-  "Ambiguous code" => ambiguous_code
+  "Crystal code"   => crystal_code,
+  "JSON code"      => json_code,
+  "YAML code"      => yaml_code,
+  "Ambiguous code" => ambiguous_code,
 }
 
 samples.each do |name, code|
   puts "\n--- #{name} ---"
-  
+
   # Try to detect the language
   if detected_lexer = Obelisk::Registry.lexers.analyze(code)
     puts "Detected language: #{detected_lexer.name}"
-    
+
     # Show the confidence scores from each lexer
     puts "\nConfidence scores:"
     Obelisk::Registry.lexers.all.each do |lexer|
@@ -87,14 +87,14 @@ samples.each do |name, code|
         puts "  #{lexer.name}: #{(score * 100).round(1)}%"
       end
     end
-    
+
     # Highlight with detected language
     highlighted = Obelisk.highlight(code, detected_lexer.name, "terminal", "github")
     puts "\nHighlighted output:"
     puts highlighted
   else
     puts "Could not detect language (scores too low)"
-    
+
     # Show all scores anyway
     puts "\nAll scores:"
     Obelisk::Registry.lexers.all.each do |lexer|
@@ -129,7 +129,7 @@ end
 puts "\nMixed code that could be Ruby or Crystal:"
 if detected = Obelisk::Registry.lexers.analyze(mixed_code)
   puts "Detected as: #{detected.name}"
-  
+
   # Show why it was detected as that language
   puts "\nAnalysis breakdown:"
   Obelisk::Registry.lexers.all.each do |lexer|

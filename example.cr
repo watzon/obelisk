@@ -19,7 +19,7 @@ tokens = [
   Obelisk::TokenType::Keyword,
   Obelisk::TokenType::NameFunction,
   Obelisk::TokenType::LiteralString,
-  Obelisk::TokenType::Comment
+  Obelisk::TokenType::Comment,
 ]
 
 tokens.each do |token_type|
@@ -49,7 +49,7 @@ manual_tokens = [
   Obelisk::Token.new(Obelisk::TokenType::Text, "\n  "),
   Obelisk::Token.new(Obelisk::TokenType::LiteralString, "\"Hello\""),
   Obelisk::Token.new(Obelisk::TokenType::Text, "\n"),
-  Obelisk::Token.new(Obelisk::TokenType::Keyword, "end")
+  Obelisk::Token.new(Obelisk::TokenType::Keyword, "end"),
 ]
 
 # Convert to iterator

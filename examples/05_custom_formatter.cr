@@ -8,14 +8,14 @@ class MarkdownFormatter < Obelisk::Formatter
   def format(tokens : Iterator(Obelisk::Token), style : Obelisk::Style) : String
     String.build do |io|
       io << "```crystal\n"
-      
+
       current_line = [] of {Obelisk::Token, String}
-      
+
       tokens.each do |token|
         if token.value.includes?("\n")
           # Handle tokens with newlines
           lines = token.value.split('\n', remove_empty: false)
-          
+
           lines.each_with_index do |line, idx|
             if idx > 0
               # Output current line and start new one
@@ -23,7 +23,7 @@ class MarkdownFormatter < Obelisk::Formatter
               io << '\n'
               current_line.clear
             end
-            
+
             unless line.empty?
               # Generate markdown formatting
               formatted = format_token(token, line)
@@ -36,29 +36,29 @@ class MarkdownFormatter < Obelisk::Formatter
           current_line << {token, formatted}
         end
       end
-      
+
       # Output final line
       output_line(io, current_line) unless current_line.empty?
-      
+
       io << "\n```"
     end
   end
-  
+
   private def format_token(token : Obelisk::Token, text : String) : String
     case token.type
     when .keyword?, .keyword_declaration?, .keyword_type?
-      "**#{text}**"  # Bold for keywords
+      "**#{text}**" # Bold for keywords
     when .comment?, .comment_single?
-      "_#{text}_"    # Italic for comments
+      "_#{text}_" # Italic for comments
     when .literal_string?, .literal_string_double?
-      "`#{text}`"    # Code style for strings
+      "`#{text}`" # Code style for strings
     when .name_function?, .name_class?
       "**`#{text}`**" # Bold code for functions/classes
     else
       text
     end
   end
-  
+
   private def output_line(io : IO, line : Array({Obelisk::Token, String}))
     line.each do |(token, formatted)|
       io << formatted
@@ -72,7 +72,7 @@ class TokenListFormatter < Obelisk::Formatter
     String.build do |io|
       io << "Token List:\n"
       io << "-" * 50 << '\n'
-      
+
       tokens.each_with_index do |token, idx|
         io << sprintf("%3d: %-25s %s\n", idx, token.type.to_s, token.value.inspect)
       end
@@ -85,28 +85,28 @@ class BBCodeFormatter < Obelisk::Formatter
   def format(tokens : Iterator(Obelisk::Token), style : Obelisk::Style) : String
     String.build do |io|
       io << "[code]\n"
-      
+
       tokens.each do |token|
         text = token.value
-        
+
         formatted = case token.type
-        when .keyword?, .keyword_declaration?
-          "[color=red][b]#{text}[/b][/color]"
-        when .comment?, .comment_single?
-          "[color=gray][i]#{text}[/i][/color]"
-        when .literal_string?, .literal_string_double?
-          "[color=green]#{text}[/color]"
-        when .literal_number?
-          "[color=blue]#{text}[/color]"
-        when .name_function?, .name_class?
-          "[color=purple]#{text}[/color]"
-        else
-          text
-        end
-        
+                    when .keyword?, .keyword_declaration?
+                      "[color=red][b]#{text}[/b][/color]"
+                    when .comment?, .comment_single?
+                      "[color=gray][i]#{text}[/i][/color]"
+                    when .literal_string?, .literal_string_double?
+                      "[color=green]#{text}[/color]"
+                    when .literal_number?
+                      "[color=blue]#{text}[/color]"
+                    when .name_function?, .name_class?
+                      "[color=purple]#{text}[/color]"
+                    else
+                      text
+                    end
+
         io << formatted
       end
-      
+
       io << "\n[/code]"
     end
   end
@@ -134,13 +134,13 @@ if lexer && style
   tokens = lexer.tokenize(code)
   output = formatter.format(tokens, style)
   puts output
-  
+
   puts "\n=== Token List Formatter ==="
   formatter = TokenListFormatter.new
   tokens = lexer.tokenize(code)
   output = formatter.format(tokens, style)
   puts output
-  
+
   puts "\n=== BBCode Formatter ==="
   formatter = BBCodeFormatter.new
   tokens = lexer.tokenize(code)

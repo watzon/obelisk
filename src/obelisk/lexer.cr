@@ -12,8 +12,8 @@ module Obelisk
     getter not_multiline : Bool
     getter ensure_nl : Bool
     getter priority : Float32
-    
-    def initialize(@name : String, 
+
+    def initialize(@name : String,
                    @aliases = [] of String,
                    @filenames = [] of String,
                    @mime_types = [] of String,
@@ -104,7 +104,7 @@ module Obelisk
     end
 
     def exit_include : String?
-      @include_stack.pop? 
+      @include_stack.pop?
     end
 
     def current_include_state : String?
@@ -191,7 +191,7 @@ module Obelisk
     end
   end
 
-  # Actions that can be performed when a rule matches  
+  # Actions that can be performed when a rule matches
   alias RuleAction = TokenType | Proc(String, LexerState, Array(String), Array(Token))
 
   # Helper to create rule actions
@@ -306,9 +306,9 @@ module Obelisk
     end
 
     # Conditional actions
-    def self.conditional(condition : Proc(LexerState, Bool), 
-                        true_action : RuleAction, 
-                        false_action : RuleAction? = nil) : RuleAction
+    def self.conditional(condition : Proc(LexerState, Bool),
+                         true_action : RuleAction,
+                         false_action : RuleAction? = nil) : RuleAction
       ->(match : String, lexer_state : LexerState, groups : Array(String)) do
         action = condition.call(lexer_state) ? true_action : false_action
         if action
@@ -345,26 +345,26 @@ module Obelisk
     # Find the first matching rule from all active states
     def find_match(state : LexerState) : {LexerRule, Regex::MatchData}?
       remaining = state.remaining
-      
+
       # Check rules from all active states in priority order:
       # 1. Include state (highest priority)
       # 2. Combined states
       # 3. Current main state
-      
+
       # Check include state first (if any)
       if include_state = state.current_include_state
         if rule_match = try_rules_for_state(include_state, remaining)
           return rule_match
         end
       end
-      
+
       # Check combined states
       state.combined_states.each do |combined_state|
         if rule_match = try_rules_for_state(combined_state, remaining)
           return rule_match
         end
       end
-      
+
       # Check current main state
       if rule_match = try_rules_for_state(state.current_state, remaining)
         return rule_match
@@ -372,10 +372,10 @@ module Obelisk
 
       nil
     end
-    
+
     private def try_rules_for_state(state_name : String, remaining : String) : {LexerRule, Regex::MatchData}?
       current_rules = state_rules(state_name)
-      
+
       current_rules.each do |rule|
         if match = rule.match(remaining, 0)
           # Only accept matches that start at position 0
@@ -384,7 +384,7 @@ module Obelisk
           end
         end
       end
-      
+
       nil
     end
   end
@@ -419,12 +419,12 @@ module Obelisk
 
         # Safety check to prevent infinite loops
         start_pos = @state.pos
-        
+
         # Find a matching rule
         if match_data = @lexer.find_match(@state)
           rule, match = match_data
           matched_text = match[0]
-          
+
           # Safety check: ensure we got a valid match
           if matched_text.empty?
             # Empty match, advance by one character to prevent infinite loop
@@ -437,19 +437,19 @@ module Obelisk
               return stop
             end
           end
-          
+
           # Execute the rule action
           groups = begin
             match.to_a[1..].map(&.to_s)
           rescue
-            [] of String  # Handle potential array access errors
+            [] of String # Handle potential array access errors
           end
-          
+
           tokens = execute_action(rule.action, matched_text, groups)
-          
+
           # Advance the position
           @state.advance(matched_text.size)
-          
+
           # Safety check: ensure we made progress
           if @state.pos == start_pos
             # No progress made, force advance to prevent infinite loop
@@ -462,7 +462,7 @@ module Obelisk
               return stop
             end
           end
-          
+
           # Queue additional tokens and return the first one
           if tokens.empty?
             # No tokens generated, try again
@@ -514,7 +514,7 @@ module Obelisk
     getter start_token : Token?
     getter end_token : Token?
 
-    def initialize(@start_pos : Int32, @end_pos : Int32, @lexer : Lexer, 
+    def initialize(@start_pos : Int32, @end_pos : Int32, @lexer : Lexer,
                    @start_token : Token? = nil, @end_token : Token? = nil)
     end
 
@@ -547,16 +547,16 @@ module Obelisk
         if start_match = @start_pattern.match(text, pos)
           start_pos = start_match.begin(0)
           start_end = start_match.end(0)
-          
+
           # Find corresponding end pattern
           if end_match = @end_pattern.match(text, start_end)
             end_start = end_match.begin(0)
             end_pos = end_match.end(0)
-            
+
             # Create tokens for start/end delimiters if specified
             start_token = @start_token_type ? Token.new(@start_token_type.not_nil!, start_match[0]) : nil
             end_token = @end_token_type ? Token.new(@end_token_type.not_nil!, end_match[0]) : nil
-            
+
             # Create region for the content between delimiters
             regions << EmbeddedRegion.new(start_end, end_start, @lexer, start_token, end_token)
             pos = end_pos
@@ -594,12 +594,12 @@ module Obelisk
 
     def detect_all_regions(text : String, state : LexerState) : Array(EmbeddedRegion)
       all_regions = [] of EmbeddedRegion
-      
+
       @region_detectors.each do |detector|
         regions = detector.detect_regions(text, state)
         all_regions.concat(regions)
       end
-      
+
       # Sort regions by start position
       all_regions.sort_by!(&.start_pos)
       all_regions
@@ -609,11 +609,11 @@ module Obelisk
   # Simple iterator for single tokens (avoids Crystal bug with [token].each.as())
   class SingleTokenIterator
     include Iterator(Token)
-    
+
     def initialize(@token : Token)
       @yielded = false
     end
-    
+
     def next : Token | Iterator::Stop
       if @yielded
         stop
@@ -628,11 +628,11 @@ module Obelisk
   # This pre-fetches tokens to avoid memory corruption when iterating
   class SafeTokenIteratorAdapter
     include Iterator(Token)
-    
+
     def initialize(lexer : Lexer, text : String)
       @tokens = [] of Token
       @index = 0
-      
+
       # Pre-fetch all tokens to avoid iterator issues
       begin
         iter = lexer.tokenize(text)
@@ -649,7 +649,7 @@ module Obelisk
         # If tokenization fails, leave tokens empty
       end
     end
-    
+
     def next : Token | Iterator::Stop
       if @index < @tokens.size
         token = @tokens[@index]
@@ -676,23 +676,23 @@ module Obelisk
       @segments = [] of {iterator: TokenIterator, delimiter: Token?}
       @current_segment_index = 0
       @current_iterator = nil.as(TokenIterator?)
-      
+
       begin
         @regions = @lexer.detect_all_regions(@text, LexerState.new(@text))
         @segments = build_segments
       rescue ex
         # If initialization fails, create a fallback segment
         @segments = [{
-          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
-          delimiter: nil.as(Token?)
+          iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
+          delimiter: nil.as(Token?),
         }]
-        @finished = false  # We still have one segment to process
+        @finished = false # We still have one segment to process
       end
     end
 
     def next : Token | Iterator::Stop
       return stop if @finished
-      
+
       loop do
         # If we don't have a current iterator, get the next segment
         unless @current_iterator
@@ -700,12 +700,12 @@ module Obelisk
             @finished = true
             return stop
           end
-          
+
           begin
             segment = @segments[@current_segment_index]
             @current_iterator = segment[:iterator]
             @current_segment_index += 1
-            
+
             # Emit delimiter token if present
             if delimiter = segment[:delimiter]
               return delimiter
@@ -749,7 +749,7 @@ module Obelisk
           # Validate region bounds
           next if region.start_pos < 0 || region.start_pos >= @text.size
           next if region.end_pos && (region.end_pos.not_nil! <= region.start_pos || region.end_pos.not_nil! > @text.size)
-          
+
           # Add base lexer segment before the region
           if region.start_pos > last_pos
             begin
@@ -757,8 +757,8 @@ module Obelisk
               unless base_content.empty?
                 # Use safe adapter for all lexers to avoid Crystal bug #14317
                 segments << {
-                  iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, base_content).as(TokenIterator),
-                  delimiter: nil.as(Token?)
+                  iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, base_content).as(TokenIterator),
+                  delimiter: nil.as(Token?),
                 }
               end
             rescue
@@ -770,8 +770,8 @@ module Obelisk
           if start_token = region.start_token
             begin
               segments << {
-                iterator: SingleTokenIterator.new(start_token).as(TokenIterator),
-                delimiter: nil.as(Token?)
+                iterator:  SingleTokenIterator.new(start_token).as(TokenIterator),
+                delimiter: nil.as(Token?),
               }
             rescue
               # Skip if iterator creation fails
@@ -784,8 +784,8 @@ module Obelisk
             unless content.empty?
               # Use safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator: SafeTokenIteratorAdapter.new(region.lexer, content).as(TokenIterator),
-                delimiter: nil.as(Token?)
+                iterator:  SafeTokenIteratorAdapter.new(region.lexer, content).as(TokenIterator),
+                delimiter: nil.as(Token?),
               }
             end
           rescue
@@ -796,8 +796,8 @@ module Obelisk
           if end_token = region.end_token
             begin
               segments << {
-                iterator: SingleTokenIterator.new(end_token).as(TokenIterator),
-                delimiter: nil.as(Token?)
+                iterator:  SingleTokenIterator.new(end_token).as(TokenIterator),
+                delimiter: nil.as(Token?),
               }
             rescue
               # Skip if iterator creation fails
@@ -814,8 +814,8 @@ module Obelisk
             unless remaining_content.empty?
               # Use safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, remaining_content).as(TokenIterator),
-                delimiter: nil.as(Token?)
+                iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, remaining_content).as(TokenIterator),
+                delimiter: nil.as(Token?),
               }
             end
           rescue
@@ -825,8 +825,8 @@ module Obelisk
       rescue
         # If any major error occurs, create a fallback segment with the entire text
         segments = [{
-          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
-          delimiter: nil.as(Token?)
+          iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
+          delimiter: nil.as(Token?),
         }]
       end
 
@@ -841,8 +841,8 @@ module Obelisk
       start_pattern = /^```#{Regex.escape(language)}\s*\n/m
       end_pattern = /^```\s*$/m
       RegexRegionDetector.new(
-        start_pattern, 
-        end_pattern, 
+        start_pattern,
+        end_pattern,
         lexer,
         TokenType::Punctuation, # ```language
         TokenType::Punctuation  # ```
@@ -870,8 +870,8 @@ module Obelisk
         start_pattern,
         end_pattern,
         lexer,
-        TokenType::NameTag,    # opening tag
-        TokenType::NameTag     # closing tag
+        TokenType::NameTag, # opening tag
+        TokenType::NameTag  # closing tag
       )
     end
   end
@@ -919,7 +919,7 @@ module Obelisk
   enum CompositionStrategy
     # First matching lexer wins
     FirstMatch
-    # Highest confidence lexer wins  
+    # Highest confidence lexer wins
     HighestConfidence
     # Merge tokens from all matching lexers
     MergeAll
@@ -944,11 +944,11 @@ module Obelisk
     def config : LexerConfig
       # Use the first lexer's config as base, combining other properties
       base_config = @lexers.first.config
-      
+
       combined_aliases = @lexers.flat_map(&.aliases).uniq
       combined_filenames = @lexers.flat_map(&.filenames).uniq
       combined_mimes = @lexers.flat_map(&.mime_types).uniq
-      
+
       LexerConfig.new(
         name: @name,
         aliases: combined_aliases,
@@ -1021,11 +1021,11 @@ module Obelisk
       # Get the next token (sorted by position, then by iterator priority)
       @current_tokens.to_a.sort_by! { |token_info| token_info[0].value.size }
       @current_tokens = Deque.new(@current_tokens.to_a.sort_by! { |token_info| token_info[0].value.size })
-      
+
       if @current_tokens.empty?
         return stop
       end
-      
+
       token, iterator_index = @current_tokens.shift
 
       # Prime the next token from the same iterator
@@ -1075,7 +1075,7 @@ module Obelisk
     def next : Token | Iterator::Stop
       while @current_index < @current_iterators.size
         iterator = @current_iterators[@current_index]
-        
+
         case token = iterator.next
         when Token
           return token
@@ -1105,7 +1105,7 @@ module Obelisk
     def config : LexerConfig
       # Use the last lexer's config as it represents the final output
       last_config = @chain.last.config
-      
+
       LexerConfig.new(
         name: @name,
         aliases: [last_config.name] + last_config.aliases,
@@ -1118,13 +1118,13 @@ module Obelisk
     def analyze(text : String) : Float32
       # Chain analysis: each lexer in sequence must have confidence
       total_confidence = 1.0f32
-      
+
       @chain.each do |lexer|
         confidence = lexer.analyze(text)
         total_confidence *= confidence
         break if confidence == 0.0f32
       end
-      
+
       total_confidence
     end
 
@@ -1150,12 +1150,12 @@ module Obelisk
     private def build_chain_iterator
       # Start with the first lexer
       current_iterator = @chain.first.tokenize(@text)
-      
+
       # Process through each subsequent lexer in the chain
       @chain[1..].each do |lexer|
         current_iterator = process_through_lexer(current_iterator, lexer)
       end
-      
+
       current_iterator
     end
 
@@ -1185,7 +1185,7 @@ module Obelisk
         when Token
           # Process the token's value through the target lexer
           processed_tokens = @lexer.tokenize(source_token.value).to_a
-          
+
           if processed_tokens.empty?
             # If no tokens produced, return original
             source_token
@@ -1252,7 +1252,7 @@ module Obelisk
     getter content_weight : Float32
     getter fallback_enabled : Bool
 
-    def initialize(@priority_weight = 0.3f32, @confidence_weight = 0.4f32, 
+    def initialize(@priority_weight = 0.3f32, @confidence_weight = 0.4f32,
                    @filename_weight = 0.2f32, @mime_type_weight = 0.1f32,
                    @content_weight = 0.0f32, @fallback_enabled = true)
     end
@@ -1269,7 +1269,7 @@ module Obelisk
     getter content_score : Float32
 
     def initialize(@lexer : Lexer, @total_score : Float32, @priority_score : Float32,
-                   @confidence_score : Float32, @filename_score : Float32, 
+                   @confidence_score : Float32, @filename_score : Float32,
                    @mime_type_score : Float32, @content_score : Float32)
     end
   end
@@ -1282,38 +1282,38 @@ module Obelisk
     end
 
     # Select the best lexer for the given parameters
-    def select(lexers : Array(Lexer), text : String, filename : String? = nil, 
+    def select(lexers : Array(Lexer), text : String, filename : String? = nil,
                mime_type : String? = nil) : SelectionResult?
       return nil if lexers.empty?
 
       # Score all lexers
       scored_lexers = lexers.compact_map { |lexer| score_lexer(lexer, text, filename, mime_type) }
-      
+
       # Return the highest scoring lexer
       scored_lexers.max_by?(&.total_score)
     end
 
     # Select multiple lexers ranked by score
     def select_ranked(lexers : Array(Lexer), text : String, filename : String? = nil,
-                     mime_type : String? = nil, limit : Int32? = nil) : Array(SelectionResult)
+                      mime_type : String? = nil, limit : Int32? = nil) : Array(SelectionResult)
       return [] of SelectionResult if lexers.empty?
 
       # Score all lexers and sort by descending score
       scored_lexers = lexers.compact_map { |lexer| score_lexer(lexer, text, filename, mime_type) }
       ranked = scored_lexers.sort_by(&.total_score).reverse
-      
+
       limit ? ranked.first(limit) : ranked
     end
 
     # Check if a lexer meets minimum threshold
     def meets_threshold?(lexer : Lexer, text : String, threshold : Float32 = 0.5f32,
-                        filename : String? = nil, mime_type : String? = nil) : Bool
+                         filename : String? = nil, mime_type : String? = nil) : Bool
       result = score_lexer(lexer, text, filename, mime_type)
       result ? result.total_score >= threshold : false
     end
 
-    private def score_lexer(lexer : Lexer, text : String, filename : String?, 
-                           mime_type : String?) : SelectionResult?
+    private def score_lexer(lexer : Lexer, text : String, filename : String?,
+                            mime_type : String?) : SelectionResult?
       config = lexer.config
 
       # Calculate individual scores (0.0 to 1.0)
@@ -1346,14 +1346,14 @@ module Obelisk
 
     private def calculate_filename_score(lexer : Lexer, filename : String) : Float32
       return 1.0f32 if lexer.matches_filename?(filename)
-      
+
       # Partial scoring for similar extensions
       lexer_extensions = lexer.filenames.compact_map do |pattern|
         pattern.starts_with?("*.") ? pattern[2..] : nil
       end
-      
+
       file_extension = File.extname(filename).lchop('.')
-      
+
       if file_extension.empty?
         0.0f32
       else
@@ -1367,14 +1367,14 @@ module Obelisk
 
     private def calculate_mime_type_score(lexer : Lexer, mime_type : String) : Float32
       return 1.0f32 if lexer.matches_mime_type?(mime_type)
-      
+
       # Partial scoring for related MIME types
       lexer_types = lexer.mime_types
-      
+
       # Check for parent type matches (e.g., "text/*" matches "text/plain")
       base_type = mime_type.split('/')[0]? || ""
       parent_match = lexer_types.any? { |type| type.starts_with?(base_type + "/") }
-      
+
       parent_match ? 0.4f32 : 0.0f32
     end
 
@@ -1397,7 +1397,7 @@ module Obelisk
     def register(lexer : Lexer) : Nil
       name = lexer.name
       @lexers[name] = lexer
-      
+
       # Register aliases
       lexer.aliases.each do |alias_name|
         @aliases[alias_name] = name
@@ -1409,12 +1409,12 @@ module Obelisk
       if lexer = @lexers[name]?
         return lexer
       end
-      
+
       # Try alias lookup
       if real_name = @aliases[name]?
         return @lexers[real_name]?
       end
-      
+
       nil
     end
 
@@ -1427,23 +1427,23 @@ module Obelisk
     end
 
     # Priority-based selection methods
-    def select_best(text : String, filename : String? = nil, 
-                   mime_type : String? = nil) : SelectionResult?
+    def select_best(text : String, filename : String? = nil,
+                    mime_type : String? = nil) : SelectionResult?
       @selector.select(all, text, filename, mime_type)
     end
 
     def select_ranked(text : String, filename : String? = nil, mime_type : String? = nil,
-                     limit : Int32? = nil) : Array(SelectionResult)
+                      limit : Int32? = nil) : Array(SelectionResult)
       @selector.select_ranked(all, text, filename, mime_type, limit)
     end
 
-    def select_by_name_or_auto(name_or_alias : String?, text : String, 
-                              filename : String? = nil, mime_type : String? = nil) : Lexer?
+    def select_by_name_or_auto(name_or_alias : String?, text : String,
+                               filename : String? = nil, mime_type : String? = nil) : Lexer?
       # If name provided, try to get specific lexer
       if name_or_alias && !name_or_alias.empty?
         return get(name_or_alias)
       end
-      
+
       # Otherwise use automatic selection
       result = select_best(text, filename, mime_type)
       result ? result.lexer : nil
@@ -1451,27 +1451,27 @@ module Obelisk
 
     def get_candidates(filename : String? = nil, mime_type : String? = nil) : Array(Lexer)
       candidates = all
-      
+
       # Filter by filename if provided
       if filename
         filename_matches = candidates.select(&.matches_filename?(filename))
         candidates = filename_matches unless filename_matches.empty?
       end
-      
+
       # Filter by MIME type if provided
       if mime_type
         mime_matches = candidates.select(&.matches_mime_type?(mime_type))
         candidates = mime_matches unless mime_matches.empty?
       end
-      
+
       candidates
     end
 
     def meets_threshold?(lexer_name : String, text : String, threshold : Float32 = 0.5f32,
-                        filename : String? = nil, mime_type : String? = nil) : Bool
+                         filename : String? = nil, mime_type : String? = nil) : Bool
       lexer = get(lexer_name)
       return false unless lexer
-      
+
       @selector.meets_threshold?(lexer, text, threshold, filename, mime_type)
     end
   end
@@ -1482,7 +1482,7 @@ module Obelisk
     Auto
     # Filename-based selection only
     Filename
-    # MIME type-based selection only  
+    # MIME type-based selection only
     MimeType
     # Content analysis only
     Content
@@ -1501,7 +1501,7 @@ module Obelisk
     end
 
     def select(text : String, strategy : SelectionStrategy = SelectionStrategy::Auto,
-               lexer_name : String? = nil, filename : String? = nil, 
+               lexer_name : String? = nil, filename : String? = nil,
                mime_type : String? = nil) : Lexer
       case strategy
       when .auto?
@@ -1528,14 +1528,14 @@ module Obelisk
 
     private def filename_select(filename : String?) : Lexer?
       return nil unless filename
-      
+
       candidates = @registry.get_candidates(filename: filename)
       candidates.max_by?(&.config.priority)
     end
 
     private def mime_type_select(mime_type : String?) : Lexer?
       return nil unless mime_type
-      
+
       candidates = @registry.get_candidates(mime_type: mime_type)
       candidates.max_by?(&.config.priority)
     end
@@ -1549,7 +1549,7 @@ module Obelisk
         mime_type_weight: 0.0f32
       )
       selector = PriorityLexerSelector.new(criteria)
-      
+
       result = selector.select(@registry.all, text)
       result ? result.lexer : nil
     end
@@ -1589,15 +1589,15 @@ module Obelisk
     end
 
     def close(end_pos : Int32) : LanguageContext
-      LanguageContext.new(@language, @start_pos, end_pos, @parent_context, 
-                         @nesting_level, @context_data)
+      LanguageContext.new(@language, @start_pos, end_pos, @parent_context,
+        @nesting_level, @context_data)
     end
   end
 
   # Language nesting rules and patterns
   class LanguageNestingRule
     getter parent_language : String
-    getter embedded_language : String  
+    getter embedded_language : String
     getter start_pattern : Regex
     getter end_pattern : Regex
     getter max_nesting_level : Int32
@@ -1665,10 +1665,10 @@ module Obelisk
             # Close the current context
             closed_context = context.close(end_match.begin(0))
             contexts << closed_context
-            
+
             # Remove from current contexts
             current_contexts.delete(context)
-            
+
             pos = end_match.end(0)
             match_found = true
             break
@@ -1678,25 +1678,25 @@ module Obelisk
           if start_match = find_start_pattern(text, pos, context)
             start_pos = start_match.begin(0)
             match_end = start_match.end(0)
-            
+
             # Find the rule that matched
             rule = find_matching_rule(context.language, text[start_match.begin(0)...match_end])
             next unless rule
 
             # Extract context data
             context_data = rule.extract_context(start_match[0])
-            
+
             # Create new embedded context
             nesting_level = context.nesting_level + 1
             embedded_context = LanguageContext.new(
-              rule.embedded_language, 
+              rule.embedded_language,
               match_end,
               nil,
               context,
               nesting_level,
               context_data
             )
-            
+
             current_contexts << embedded_context
             pos = match_end
             match_found = true
@@ -1779,11 +1779,11 @@ module Obelisk
       # Analyze based on base language and embedded complexity
       base_lexer = @architecture.get_lexer(@base_language)
       base_score = base_lexer.analyze(text)
-      
+
       # Boost score if we detect embedded languages
       contexts = @architecture.analyze_contexts(text, @base_language)
       embedded_count = contexts.count(&.language.!= @base_language)
-      
+
       # Boost score for documents with embedded languages
       boost = embedded_count > 0 ? 0.2f32 : 0.0f32
       Math.min(base_score + boost, 1.0f32)
@@ -1808,8 +1808,8 @@ module Obelisk
 
     def initialize(@architecture : EmbeddedLanguageArchitecture, @text : String, @base_language : String)
       @contexts = @architecture.analyze_contexts(@text, @base_language)
-        .reject(&.language.== @base_language)  # Don't process base language contexts separately
-        .sort_by(&.start_pos)  # Process in document order
+        .reject(&.language.== @base_language) # Don't process base language contexts separately
+        .sort_by(&.start_pos)                 # Process in document order
       @current_context_index = 0
       @current_iterator = nil
       @current_position = 0
@@ -1849,9 +1849,9 @@ module Obelisk
 
     private def advance_to_next_context
       return if @current_context_index >= @contexts.size
-      
+
       context = @contexts[@current_context_index]
-      
+
       # Handle gap between contexts (base language content)
       if context.start_pos > @current_position
         gap_content = @text[@current_position...context.start_pos]
@@ -1871,7 +1871,7 @@ module Obelisk
         @current_position = context.end_pos || @text.size
         return
       end
-      
+
       # Move to next context if current one is empty
       @current_context_index += 1
       advance_to_next_context
@@ -1908,7 +1908,7 @@ module Obelisk
             end
             attrs
           }
-        )
+        ),
       ]
     end
 
@@ -1916,7 +1916,7 @@ module Obelisk
     def self.markdown_code_blocks : Array(LanguageNestingRule)
       [
         LanguageNestingRule.new(
-          "markdown", "*",  # Any language in code blocks
+          "markdown", "*", # Any language in code blocks
           /^```(\w+)\s*$/m, /^```\s*$/m,
           context_extractor: ->(text : String) {
             attrs = {} of String => String
@@ -1925,7 +1925,7 @@ module Obelisk
             end
             attrs
           }
-        )
+        ),
       ]
     end
 
@@ -1941,7 +1941,7 @@ module Obelisk
           template_lang, embedded_lang,
           /\{\{/, /\}\}/,
           max_nesting_level: 3
-        )
+        ),
       ]
     end
 
@@ -1959,7 +1959,7 @@ module Obelisk
         LanguageNestingRule.new(
           "vue", "css",
           /<style[^>]*>/i, /<\/style>/i
-        )
+        ),
       ]
     end
 
@@ -1973,7 +1973,7 @@ module Obelisk
         LanguageNestingRule.new(
           "sql", "python",
           /\$\$PYTHON\$/i, /\$\$\/PYTHON\$/i
-        )
+        ),
       ]
     end
   end

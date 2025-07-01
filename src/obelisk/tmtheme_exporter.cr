@@ -7,77 +7,77 @@ module Obelisk
   class TmThemeExporter
     # TokenType to TextMate scope mapping
     TOKEN_TO_SCOPE = {
-      TokenType::Comment => "comment",
-      TokenType::CommentSingle => "comment.line",
+      TokenType::Comment          => "comment",
+      TokenType::CommentSingle    => "comment.line",
       TokenType::CommentMultiline => "comment.block",
-      TokenType::CommentHashbang => "comment.line.shebang",
-      TokenType::CommentPreproc => "comment.block.preprocessor",
-      TokenType::CommentSpecial => "comment.block.documentation",
+      TokenType::CommentHashbang  => "comment.line.shebang",
+      TokenType::CommentPreproc   => "comment.block.preprocessor",
+      TokenType::CommentSpecial   => "comment.block.documentation",
 
-      TokenType::LiteralString => "string",
-      TokenType::LiteralStringSingle => "string.quoted.single",
-      TokenType::LiteralStringDouble => "string.quoted.double",
+      TokenType::LiteralString         => "string",
+      TokenType::LiteralStringSingle   => "string.quoted.single",
+      TokenType::LiteralStringDouble   => "string.quoted.double",
       TokenType::LiteralStringBacktick => "string.quoted.other",
-      TokenType::LiteralStringHeredoc => "string.unquoted.heredoc",
+      TokenType::LiteralStringHeredoc  => "string.unquoted.heredoc",
       TokenType::LiteralStringInterpol => "string.interpolated",
-      TokenType::LiteralStringRegex => "string.regexp",
-      TokenType::LiteralStringEscape => "constant.character.escape",
-      TokenType::LiteralStringSymbol => "constant.other.symbol",
+      TokenType::LiteralStringRegex    => "string.regexp",
+      TokenType::LiteralStringEscape   => "constant.character.escape",
+      TokenType::LiteralStringSymbol   => "constant.other.symbol",
 
-      TokenType::LiteralNumber => "constant.numeric",
+      TokenType::LiteralNumber        => "constant.numeric",
       TokenType::LiteralNumberInteger => "constant.numeric.integer",
-      TokenType::LiteralNumberFloat => "constant.numeric.float",
-      TokenType::LiteralNumberHex => "constant.numeric.hex",
-      TokenType::LiteralNumberOct => "constant.numeric.octal",
-      TokenType::LiteralNumberBin => "constant.numeric.binary",
+      TokenType::LiteralNumberFloat   => "constant.numeric.float",
+      TokenType::LiteralNumberHex     => "constant.numeric.hex",
+      TokenType::LiteralNumberOct     => "constant.numeric.octal",
+      TokenType::LiteralNumberBin     => "constant.numeric.binary",
 
-      TokenType::Keyword => "keyword",
-      TokenType::KeywordConstant => "keyword.other",
+      TokenType::Keyword            => "keyword",
+      TokenType::KeywordConstant    => "keyword.other",
       TokenType::KeywordDeclaration => "storage.type",
-      TokenType::KeywordNamespace => "keyword.other",
-      TokenType::KeywordPseudo => "keyword.other",
-      TokenType::KeywordReserved => "keyword.control",
-      TokenType::KeywordType => "storage.type",
+      TokenType::KeywordNamespace   => "keyword.other",
+      TokenType::KeywordPseudo      => "keyword.other",
+      TokenType::KeywordReserved    => "keyword.control",
+      TokenType::KeywordType        => "storage.type",
 
-      TokenType::NameVariable => "variable",
-      TokenType::NameVariableClass => "variable.other.class",
-      TokenType::NameVariableGlobal => "variable.other.global",
+      TokenType::NameVariable         => "variable",
+      TokenType::NameVariableClass    => "variable.other.class",
+      TokenType::NameVariableGlobal   => "variable.other.global",
       TokenType::NameVariableInstance => "variable.other.instance",
-      TokenType::NameVariableMagic => "variable.language",
+      TokenType::NameVariableMagic    => "variable.language",
 
-      TokenType::NameFunction => "entity.name.function",
+      TokenType::NameFunction      => "entity.name.function",
       TokenType::NameFunctionMagic => "entity.name.function.magic",
-      TokenType::NameClass => "entity.name.class",
-      TokenType::NameNamespace => "entity.name.namespace",
-      TokenType::NameTag => "entity.name.tag",
-      TokenType::NameAttribute => "entity.other.attribute-name",
-      TokenType::NameConstant => "constant.other",
-      TokenType::NameBuiltin => "support.function",
+      TokenType::NameClass         => "entity.name.class",
+      TokenType::NameNamespace     => "entity.name.namespace",
+      TokenType::NameTag           => "entity.name.tag",
+      TokenType::NameAttribute     => "entity.other.attribute-name",
+      TokenType::NameConstant      => "constant.other",
+      TokenType::NameBuiltin       => "support.function",
       TokenType::NameBuiltinPseudo => "support.function",
-      TokenType::NameDecorator => "entity.name.decorator",
-      TokenType::NameEntity => "entity.name",
-      TokenType::NameException => "entity.name.exception",
-      TokenType::NameLabel => "entity.name.label",
-      TokenType::NameProperty => "variable.other.property",
+      TokenType::NameDecorator     => "entity.name.decorator",
+      TokenType::NameEntity        => "entity.name",
+      TokenType::NameException     => "entity.name.exception",
+      TokenType::NameLabel         => "entity.name.label",
+      TokenType::NameProperty      => "variable.other.property",
 
-      TokenType::Operator => "keyword.operator",
+      TokenType::Operator     => "keyword.operator",
       TokenType::OperatorWord => "keyword.operator",
-      TokenType::Punctuation => "punctuation",
+      TokenType::Punctuation  => "punctuation",
 
       TokenType::Error => "invalid.illegal",
       TokenType::Other => "source",
-      TokenType::Text => "text",
+      TokenType::Text  => "text",
 
-      TokenType::GenericHeading => "markup.heading",
+      TokenType::GenericHeading    => "markup.heading",
       TokenType::GenericSubheading => "markup.heading",
-      TokenType::GenericStrong => "markup.bold",
-      TokenType::GenericEmph => "markup.italic",
-      TokenType::GenericDeleted => "markup.deleted",
-      TokenType::GenericInserted => "markup.inserted",
-      TokenType::GenericError => "markup.error",
-      TokenType::GenericOutput => "markup.output",
-      TokenType::GenericPrompt => "markup.prompt",
-      TokenType::GenericTraceback => "markup.traceback",
+      TokenType::GenericStrong     => "markup.bold",
+      TokenType::GenericEmph       => "markup.italic",
+      TokenType::GenericDeleted    => "markup.deleted",
+      TokenType::GenericInserted   => "markup.inserted",
+      TokenType::GenericError      => "markup.error",
+      TokenType::GenericOutput     => "markup.output",
+      TokenType::GenericPrompt     => "markup.prompt",
+      TokenType::GenericTraceback  => "markup.traceback",
     }
 
     def initialize(@style : Style)
@@ -89,7 +89,7 @@ module Obelisk
         xml << %{<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n}
         xml << %{<plist version="1.0">\n}
         xml << %{<dict>\n}
-        
+
         # Theme name
         xml << %{\t<key>name</key>\n}
         xml << %{\t<string>#{escape_xml(@style.name)}</string>\n}
@@ -105,7 +105,7 @@ module Obelisk
         export_token_settings(xml)
 
         xml << %{\t</array>\n}
-        
+
         # UUID (generate a random one)
         uuid = Random::Secure.hex(16).insert(8, '-').insert(13, '-').insert(18, '-').insert(23, '-')
         xml << %{\t<key>uuid</key>\n}
@@ -161,7 +161,7 @@ module Obelisk
     private def export_token_settings(xml)
       TokenType.values.each do |token_type|
         next if token_type.text? # Skip text token as it's handled in global settings
-        
+
         if entry = @style.get_direct(token_type)
           if scope = TOKEN_TO_SCOPE[token_type]?
             export_token_setting(xml, scope, entry, humanize_token_name(token_type))
@@ -211,10 +211,10 @@ module Obelisk
 
     private def escape_xml(text : String) : String
       text.gsub('&', "&amp;")
-          .gsub('<', "&lt;")
-          .gsub('>', "&gt;")
-          .gsub('"', "&quot;")
-          .gsub('\'', "&apos;")
+        .gsub('<', "&lt;")
+        .gsub('>', "&gt;")
+        .gsub('"', "&quot;")
+        .gsub('\'', "&apos;")
     end
   end
 end

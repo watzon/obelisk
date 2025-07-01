@@ -8,13 +8,13 @@ code = %q(
 def fibonacci(n : Int32) : Array(Int64)
   return [] of Int64 if n <= 0
   return [0_i64] if n == 1
-  
+
   sequence = [0_i64, 1_i64]
-  
+
   (2...n).each do |i|
     sequence << sequence[i-1] + sequence[i-2]
   end
-  
+
   sequence
 end
 

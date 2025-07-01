@@ -70,7 +70,7 @@ describe Obelisk::LayeredTokenIterator do
   it "creates layered token iterators" do
     iterators = [
       Obelisk::PlainTextLexer.new.tokenize("hello"),
-      Obelisk::PlainTextLexer.new.tokenize("world")
+      Obelisk::PlainTextLexer.new.tokenize("world"),
     ]
 
     layered = Obelisk::LayeredTokenIterator.new(iterators)

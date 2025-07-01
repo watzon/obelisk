@@ -9,99 +9,99 @@ module Obelisk
     # Chroma TokenType to Obelisk TokenType mapping
     TOKEN_MAPPINGS = {
       # Basic types
-      "Error" => TokenType::Error,
-      "Other" => TokenType::Other,
-      "Text" => TokenType::Text,
+      "Error"      => TokenType::Error,
+      "Other"      => TokenType::Other,
+      "Text"       => TokenType::Text,
       "Background" => TokenType::Text, # Background is handled specially
 
       # Keywords
-      "Keyword" => TokenType::Keyword,
-      "KeywordConstant" => TokenType::KeywordConstant,
+      "Keyword"            => TokenType::Keyword,
+      "KeywordConstant"    => TokenType::KeywordConstant,
       "KeywordDeclaration" => TokenType::KeywordDeclaration,
-      "KeywordNamespace" => TokenType::KeywordNamespace,
-      "KeywordPseudo" => TokenType::KeywordPseudo,
-      "KeywordReserved" => TokenType::KeywordReserved,
-      "KeywordType" => TokenType::KeywordType,
+      "KeywordNamespace"   => TokenType::KeywordNamespace,
+      "KeywordPseudo"      => TokenType::KeywordPseudo,
+      "KeywordReserved"    => TokenType::KeywordReserved,
+      "KeywordType"        => TokenType::KeywordType,
 
       # Names
-      "Name" => TokenType::Name,
-      "NameAttribute" => TokenType::NameAttribute,
-      "NameBuiltin" => TokenType::NameBuiltin,
-      "NameBuiltinPseudo" => TokenType::NameBuiltinPseudo,
-      "NameClass" => TokenType::NameClass,
-      "NameConstant" => TokenType::NameConstant,
-      "NameDecorator" => TokenType::NameDecorator,
-      "NameEntity" => TokenType::NameEntity,
-      "NameException" => TokenType::NameException,
-      "NameFunction" => TokenType::NameFunction,
-      "NameFunctionMagic" => TokenType::NameFunctionMagic,
-      "NameLabel" => TokenType::NameLabel,
-      "NameNamespace" => TokenType::NameNamespace,
-      "NameOther" => TokenType::NameOther,
-      "NameProperty" => TokenType::NameProperty,
-      "NameTag" => TokenType::NameTag,
-      "NameVariable" => TokenType::NameVariable,
-      "NameVariableClass" => TokenType::NameVariableClass,
-      "NameVariableGlobal" => TokenType::NameVariableGlobal,
+      "Name"                 => TokenType::Name,
+      "NameAttribute"        => TokenType::NameAttribute,
+      "NameBuiltin"          => TokenType::NameBuiltin,
+      "NameBuiltinPseudo"    => TokenType::NameBuiltinPseudo,
+      "NameClass"            => TokenType::NameClass,
+      "NameConstant"         => TokenType::NameConstant,
+      "NameDecorator"        => TokenType::NameDecorator,
+      "NameEntity"           => TokenType::NameEntity,
+      "NameException"        => TokenType::NameException,
+      "NameFunction"         => TokenType::NameFunction,
+      "NameFunctionMagic"    => TokenType::NameFunctionMagic,
+      "NameLabel"            => TokenType::NameLabel,
+      "NameNamespace"        => TokenType::NameNamespace,
+      "NameOther"            => TokenType::NameOther,
+      "NameProperty"         => TokenType::NameProperty,
+      "NameTag"              => TokenType::NameTag,
+      "NameVariable"         => TokenType::NameVariable,
+      "NameVariableClass"    => TokenType::NameVariableClass,
+      "NameVariableGlobal"   => TokenType::NameVariableGlobal,
       "NameVariableInstance" => TokenType::NameVariableInstance,
-      "NameVariableMagic" => TokenType::NameVariableMagic,
+      "NameVariableMagic"    => TokenType::NameVariableMagic,
 
       # Literals
-      "Literal" => TokenType::Literal,
-      "LiteralDate" => TokenType::LiteralDate,
-      "LiteralString" => TokenType::LiteralString,
-      "LiteralStringAffix" => TokenType::LiteralStringAffix,
-      "LiteralStringBacktick" => TokenType::LiteralStringBacktick,
-      "LiteralStringChar" => TokenType::LiteralStringChar,
-      "LiteralStringDelimiter" => TokenType::LiteralStringDelimiter,
-      "LiteralStringDoc" => TokenType::LiteralStringDoc,
-      "LiteralStringDouble" => TokenType::LiteralStringDouble,
-      "LiteralStringEscape" => TokenType::LiteralStringEscape,
-      "LiteralStringHeredoc" => TokenType::LiteralStringHeredoc,
-      "LiteralStringInterpol" => TokenType::LiteralStringInterpol,
-      "LiteralStringOther" => TokenType::LiteralStringOther,
-      "LiteralStringRegex" => TokenType::LiteralStringRegex,
-      "LiteralStringSingle" => TokenType::LiteralStringSingle,
-      "LiteralStringSymbol" => TokenType::LiteralStringSymbol,
-      "LiteralNumber" => TokenType::LiteralNumber,
-      "LiteralNumberBin" => TokenType::LiteralNumberBin,
-      "LiteralNumberFloat" => TokenType::LiteralNumberFloat,
-      "LiteralNumberHex" => TokenType::LiteralNumberHex,
-      "LiteralNumberInteger" => TokenType::LiteralNumberInteger,
+      "Literal"                  => TokenType::Literal,
+      "LiteralDate"              => TokenType::LiteralDate,
+      "LiteralString"            => TokenType::LiteralString,
+      "LiteralStringAffix"       => TokenType::LiteralStringAffix,
+      "LiteralStringBacktick"    => TokenType::LiteralStringBacktick,
+      "LiteralStringChar"        => TokenType::LiteralStringChar,
+      "LiteralStringDelimiter"   => TokenType::LiteralStringDelimiter,
+      "LiteralStringDoc"         => TokenType::LiteralStringDoc,
+      "LiteralStringDouble"      => TokenType::LiteralStringDouble,
+      "LiteralStringEscape"      => TokenType::LiteralStringEscape,
+      "LiteralStringHeredoc"     => TokenType::LiteralStringHeredoc,
+      "LiteralStringInterpol"    => TokenType::LiteralStringInterpol,
+      "LiteralStringOther"       => TokenType::LiteralStringOther,
+      "LiteralStringRegex"       => TokenType::LiteralStringRegex,
+      "LiteralStringSingle"      => TokenType::LiteralStringSingle,
+      "LiteralStringSymbol"      => TokenType::LiteralStringSymbol,
+      "LiteralNumber"            => TokenType::LiteralNumber,
+      "LiteralNumberBin"         => TokenType::LiteralNumberBin,
+      "LiteralNumberFloat"       => TokenType::LiteralNumberFloat,
+      "LiteralNumberHex"         => TokenType::LiteralNumberHex,
+      "LiteralNumberInteger"     => TokenType::LiteralNumberInteger,
       "LiteralNumberIntegerLong" => TokenType::LiteralNumberIntegerLong,
-      "LiteralNumberOct" => TokenType::LiteralNumberOct,
+      "LiteralNumberOct"         => TokenType::LiteralNumberOct,
 
       # Operators and punctuation
-      "Operator" => TokenType::Operator,
+      "Operator"     => TokenType::Operator,
       "OperatorWord" => TokenType::OperatorWord,
-      "Punctuation" => TokenType::Punctuation,
+      "Punctuation"  => TokenType::Punctuation,
 
       # Comments
-      "Comment" => TokenType::Comment,
-      "CommentHashbang" => TokenType::CommentHashbang,
-      "CommentMultiline" => TokenType::CommentMultiline,
-      "CommentSingle" => TokenType::CommentSingle,
-      "CommentSpecial" => TokenType::CommentSpecial,
-      "CommentPreproc" => TokenType::CommentPreproc,
+      "Comment"            => TokenType::Comment,
+      "CommentHashbang"    => TokenType::CommentHashbang,
+      "CommentMultiline"   => TokenType::CommentMultiline,
+      "CommentSingle"      => TokenType::CommentSingle,
+      "CommentSpecial"     => TokenType::CommentSpecial,
+      "CommentPreproc"     => TokenType::CommentPreproc,
       "CommentPreprocFile" => TokenType::CommentPreprocFile,
 
       # Generics
-      "Generic" => TokenType::Generic,
-      "GenericDeleted" => TokenType::GenericDeleted,
-      "GenericEmph" => TokenType::GenericEmph,
-      "GenericError" => TokenType::GenericError,
-      "GenericHeading" => TokenType::GenericHeading,
-      "GenericInserted" => TokenType::GenericInserted,
-      "GenericOutput" => TokenType::GenericOutput,
-      "GenericPrompt" => TokenType::GenericPrompt,
-      "GenericStrong" => TokenType::GenericStrong,
+      "Generic"           => TokenType::Generic,
+      "GenericDeleted"    => TokenType::GenericDeleted,
+      "GenericEmph"       => TokenType::GenericEmph,
+      "GenericError"      => TokenType::GenericError,
+      "GenericHeading"    => TokenType::GenericHeading,
+      "GenericInserted"   => TokenType::GenericInserted,
+      "GenericOutput"     => TokenType::GenericOutput,
+      "GenericPrompt"     => TokenType::GenericPrompt,
+      "GenericStrong"     => TokenType::GenericStrong,
       "GenericSubheading" => TokenType::GenericSubheading,
-      "GenericTraceback" => TokenType::GenericTraceback,
-      "GenericUnderline" => TokenType::GenericEmph, # Map to existing type
+      "GenericTraceback"  => TokenType::GenericTraceback,
+      "GenericUnderline"  => TokenType::GenericEmph, # Map to existing type
 
       # Text subtypes
-      "TextWhitespace" => TokenType::TextWhitespace,
-      "TextSymbol" => TokenType::TextSymbol,
+      "TextWhitespace"  => TokenType::TextWhitespace,
+      "TextSymbol"      => TokenType::TextSymbol,
       "TextPunctuation" => TokenType::TextPunctuation,
     }
 
@@ -125,7 +125,7 @@ module Obelisk
         next unless child.name == "entry"
         type_attr = child["type"]?
         style_attr = child["style"]?
-        
+
         if type_attr == "Background" && style_attr
           parsed_style = parse_style_definition(style_attr)
           if bg_color = parsed_style[:background]
@@ -191,7 +191,7 @@ module Obelisk
           color = Color.from_hex(part)
         when /^bg:#[0-9a-fA-F]{3,6}$/
           # Background color
-          bg_color = part[3..]  # Remove "bg:" prefix
+          bg_color = part[3..] # Remove "bg:" prefix
           background = Color.from_hex(bg_color)
         when "bold"
           bold = true
@@ -205,11 +205,11 @@ module Obelisk
       end
 
       {
-        color: color,
+        color:      color,
         background: background,
-        bold: bold,
-        italic: italic,
-        underline: underline
+        bold:       bold,
+        italic:     italic,
+        underline:  underline,
       }
     end
 
@@ -238,6 +238,5 @@ module Obelisk
 
       builder.build
     end
-
   end
 end

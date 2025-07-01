@@ -9,95 +9,95 @@ module Obelisk
     TOKEN_TO_CHROMA = {
       TokenType::Error => "Error",
       TokenType::Other => "Other",
-      TokenType::Text => "Text",
+      TokenType::Text  => "Text",
 
       # Keywords
-      TokenType::Keyword => "Keyword",
-      TokenType::KeywordConstant => "KeywordConstant",
+      TokenType::Keyword            => "Keyword",
+      TokenType::KeywordConstant    => "KeywordConstant",
       TokenType::KeywordDeclaration => "KeywordDeclaration",
-      TokenType::KeywordNamespace => "KeywordNamespace",
-      TokenType::KeywordPseudo => "KeywordPseudo",
-      TokenType::KeywordReserved => "KeywordReserved",
-      TokenType::KeywordType => "KeywordType",
+      TokenType::KeywordNamespace   => "KeywordNamespace",
+      TokenType::KeywordPseudo      => "KeywordPseudo",
+      TokenType::KeywordReserved    => "KeywordReserved",
+      TokenType::KeywordType        => "KeywordType",
 
       # Names
-      TokenType::Name => "Name",
-      TokenType::NameAttribute => "NameAttribute",
-      TokenType::NameBuiltin => "NameBuiltin",
-      TokenType::NameBuiltinPseudo => "NameBuiltinPseudo",
-      TokenType::NameClass => "NameClass",
-      TokenType::NameConstant => "NameConstant",
-      TokenType::NameDecorator => "NameDecorator",
-      TokenType::NameEntity => "NameEntity",
-      TokenType::NameException => "NameException",
-      TokenType::NameFunction => "NameFunction",
-      TokenType::NameFunctionMagic => "NameFunctionMagic",
-      TokenType::NameLabel => "NameLabel",
-      TokenType::NameNamespace => "NameNamespace",
-      TokenType::NameOther => "NameOther",
-      TokenType::NameProperty => "NameProperty",
-      TokenType::NameTag => "NameTag",
-      TokenType::NameVariable => "NameVariable",
-      TokenType::NameVariableClass => "NameVariableClass",
-      TokenType::NameVariableGlobal => "NameVariableGlobal",
+      TokenType::Name                 => "Name",
+      TokenType::NameAttribute        => "NameAttribute",
+      TokenType::NameBuiltin          => "NameBuiltin",
+      TokenType::NameBuiltinPseudo    => "NameBuiltinPseudo",
+      TokenType::NameClass            => "NameClass",
+      TokenType::NameConstant         => "NameConstant",
+      TokenType::NameDecorator        => "NameDecorator",
+      TokenType::NameEntity           => "NameEntity",
+      TokenType::NameException        => "NameException",
+      TokenType::NameFunction         => "NameFunction",
+      TokenType::NameFunctionMagic    => "NameFunctionMagic",
+      TokenType::NameLabel            => "NameLabel",
+      TokenType::NameNamespace        => "NameNamespace",
+      TokenType::NameOther            => "NameOther",
+      TokenType::NameProperty         => "NameProperty",
+      TokenType::NameTag              => "NameTag",
+      TokenType::NameVariable         => "NameVariable",
+      TokenType::NameVariableClass    => "NameVariableClass",
+      TokenType::NameVariableGlobal   => "NameVariableGlobal",
       TokenType::NameVariableInstance => "NameVariableInstance",
-      TokenType::NameVariableMagic => "NameVariableMagic",
+      TokenType::NameVariableMagic    => "NameVariableMagic",
 
       # Literals
-      TokenType::Literal => "Literal",
-      TokenType::LiteralDate => "LiteralDate",
-      TokenType::LiteralString => "LiteralString",
-      TokenType::LiteralStringAffix => "LiteralStringAffix",
-      TokenType::LiteralStringBacktick => "LiteralStringBacktick",
-      TokenType::LiteralStringChar => "LiteralStringChar",
-      TokenType::LiteralStringDelimiter => "LiteralStringDelimiter",
-      TokenType::LiteralStringDoc => "LiteralStringDoc",
-      TokenType::LiteralStringDouble => "LiteralStringDouble",
-      TokenType::LiteralStringEscape => "LiteralStringEscape",
-      TokenType::LiteralStringHeredoc => "LiteralStringHeredoc",
-      TokenType::LiteralStringInterpol => "LiteralStringInterpol",
-      TokenType::LiteralStringOther => "LiteralStringOther",
-      TokenType::LiteralStringRegex => "LiteralStringRegex",
-      TokenType::LiteralStringSingle => "LiteralStringSingle",
-      TokenType::LiteralStringSymbol => "LiteralStringSymbol",
-      TokenType::LiteralNumber => "LiteralNumber",
-      TokenType::LiteralNumberBin => "LiteralNumberBin",
-      TokenType::LiteralNumberFloat => "LiteralNumberFloat",
-      TokenType::LiteralNumberHex => "LiteralNumberHex",
-      TokenType::LiteralNumberInteger => "LiteralNumberInteger",
+      TokenType::Literal                  => "Literal",
+      TokenType::LiteralDate              => "LiteralDate",
+      TokenType::LiteralString            => "LiteralString",
+      TokenType::LiteralStringAffix       => "LiteralStringAffix",
+      TokenType::LiteralStringBacktick    => "LiteralStringBacktick",
+      TokenType::LiteralStringChar        => "LiteralStringChar",
+      TokenType::LiteralStringDelimiter   => "LiteralStringDelimiter",
+      TokenType::LiteralStringDoc         => "LiteralStringDoc",
+      TokenType::LiteralStringDouble      => "LiteralStringDouble",
+      TokenType::LiteralStringEscape      => "LiteralStringEscape",
+      TokenType::LiteralStringHeredoc     => "LiteralStringHeredoc",
+      TokenType::LiteralStringInterpol    => "LiteralStringInterpol",
+      TokenType::LiteralStringOther       => "LiteralStringOther",
+      TokenType::LiteralStringRegex       => "LiteralStringRegex",
+      TokenType::LiteralStringSingle      => "LiteralStringSingle",
+      TokenType::LiteralStringSymbol      => "LiteralStringSymbol",
+      TokenType::LiteralNumber            => "LiteralNumber",
+      TokenType::LiteralNumberBin         => "LiteralNumberBin",
+      TokenType::LiteralNumberFloat       => "LiteralNumberFloat",
+      TokenType::LiteralNumberHex         => "LiteralNumberHex",
+      TokenType::LiteralNumberInteger     => "LiteralNumberInteger",
       TokenType::LiteralNumberIntegerLong => "LiteralNumberIntegerLong",
-      TokenType::LiteralNumberOct => "LiteralNumberOct",
+      TokenType::LiteralNumberOct         => "LiteralNumberOct",
 
       # Operators and punctuation
-      TokenType::Operator => "Operator",
+      TokenType::Operator     => "Operator",
       TokenType::OperatorWord => "OperatorWord",
-      TokenType::Punctuation => "Punctuation",
+      TokenType::Punctuation  => "Punctuation",
 
       # Comments
-      TokenType::Comment => "Comment",
-      TokenType::CommentHashbang => "CommentHashbang",
-      TokenType::CommentMultiline => "CommentMultiline",
-      TokenType::CommentSingle => "CommentSingle",
-      TokenType::CommentSpecial => "CommentSpecial",
-      TokenType::CommentPreproc => "CommentPreproc",
+      TokenType::Comment            => "Comment",
+      TokenType::CommentHashbang    => "CommentHashbang",
+      TokenType::CommentMultiline   => "CommentMultiline",
+      TokenType::CommentSingle      => "CommentSingle",
+      TokenType::CommentSpecial     => "CommentSpecial",
+      TokenType::CommentPreproc     => "CommentPreproc",
       TokenType::CommentPreprocFile => "CommentPreprocFile",
 
       # Generics
-      TokenType::Generic => "Generic",
-      TokenType::GenericDeleted => "GenericDeleted",
-      TokenType::GenericEmph => "GenericEmph",
-      TokenType::GenericError => "GenericError",
-      TokenType::GenericHeading => "GenericHeading",
-      TokenType::GenericInserted => "GenericInserted",
-      TokenType::GenericOutput => "GenericOutput",
-      TokenType::GenericPrompt => "GenericPrompt",
-      TokenType::GenericStrong => "GenericStrong",
+      TokenType::Generic           => "Generic",
+      TokenType::GenericDeleted    => "GenericDeleted",
+      TokenType::GenericEmph       => "GenericEmph",
+      TokenType::GenericError      => "GenericError",
+      TokenType::GenericHeading    => "GenericHeading",
+      TokenType::GenericInserted   => "GenericInserted",
+      TokenType::GenericOutput     => "GenericOutput",
+      TokenType::GenericPrompt     => "GenericPrompt",
+      TokenType::GenericStrong     => "GenericStrong",
       TokenType::GenericSubheading => "GenericSubheading",
-      TokenType::GenericTraceback => "GenericTraceback",
+      TokenType::GenericTraceback  => "GenericTraceback",
 
       # Text subtypes
-      TokenType::TextWhitespace => "TextWhitespace",
-      TokenType::TextSymbol => "TextSymbol",
+      TokenType::TextWhitespace  => "TextWhitespace",
+      TokenType::TextSymbol      => "TextSymbol",
       TokenType::TextPunctuation => "TextPunctuation",
     }
 
@@ -107,7 +107,7 @@ module Obelisk
     def export : String
       String.build do |xml|
         xml << %{<style name="#{escape_xml(@style.name)}">\n}
-        
+
         # Export background entry first (special handling)
         export_background_entry(xml)
 
@@ -126,7 +126,7 @@ module Obelisk
     private def export_token_entries(xml)
       TokenType.values.sort_by(&.to_s).each do |token_type|
         next if token_type.text? # Text is handled via Background
-        
+
         if entry = @style.get_direct(token_type)
           if chroma_type = TOKEN_TO_CHROMA[token_type]?
             export_token_entry(xml, chroma_type, entry)
@@ -168,10 +168,10 @@ module Obelisk
 
     private def escape_xml(text : String) : String
       text.gsub('&', "&amp;")
-          .gsub('<', "&lt;")
-          .gsub('>', "&gt;")
-          .gsub('"', "&quot;")
-          .gsub('\'', "&apos;")
+        .gsub('<', "&lt;")
+        .gsub('>', "&gt;")
+        .gsub('"', "&quot;")
+        .gsub('\'', "&apos;")
     end
   end
 end

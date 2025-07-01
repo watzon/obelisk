@@ -32,7 +32,7 @@ class TestMarkdownBaseLexer < Obelisk::RegexLexer
         Obelisk::LexerRule.new(/\*.*?\*/, Obelisk::TokenType::GenericEmph),
         Obelisk::LexerRule.new(/[^\n]+/, Obelisk::TokenType::Text),
         Obelisk::LexerRule.new(/\n/, Obelisk::TokenType::Text),
-      ]
+      ],
     }
   end
 end
@@ -41,12 +41,12 @@ describe Obelisk::DelegatingLexer do
   describe "region detection" do
     it "detects embedded regions" do
       markdown = TestMarkdownLexer.new
-      
+
       # Add a detector for Crystal code blocks
       crystal_lexer = Obelisk::Registry.lexers.get("crystal").not_nil!
       detector = Obelisk::EmbeddedLanguageHelpers.code_block_detector("crystal", crystal_lexer)
       markdown.add_region_detector(detector)
-      
+
       text = <<-TEXT
         # Test Document
         
@@ -60,13 +60,13 @@ describe Obelisk::DelegatingLexer do
         
         More regular text.
         TEXT
-      
+
       state = Obelisk::LexerState.new(text)
       regions = markdown.detect_all_regions(text, state)
-      
+
       regions.size.should eq(1)
       region = regions[0]
-      
+
       content = region.content(text)
       content.should contain("def hello")
       content.should contain("puts \"Hello, World!\"")
@@ -77,12 +77,12 @@ describe Obelisk::DelegatingLexer do
   describe "delegation" do
     it "delegates to embedded lexers" do
       markdown = TestMarkdownLexer.new
-      
+
       # Add a detector for Crystal code blocks
       crystal_lexer = Obelisk::Registry.lexers.get("crystal").not_nil!
       detector = Obelisk::EmbeddedLanguageHelpers.code_block_detector("crystal", crystal_lexer)
       markdown.add_region_detector(detector)
-      
+
       text = <<-TEXT
         # Header
         
@@ -92,17 +92,17 @@ describe Obelisk::DelegatingLexer do
         end
         ```
         TEXT
-      
+
       tokens = markdown.tokenize(text).to_a
-      
+
       # Should have tokens from both markdown and crystal lexers
       heading_tokens = tokens.select(&.type.== Obelisk::TokenType::GenericHeading)
       heading_tokens.size.should be >= 1
-      
+
       # Should have crystal tokens
       keyword_tokens = tokens.select(&.type.== Obelisk::TokenType::Keyword)
       keyword_tokens.size.should be >= 1
-      
+
       # Should have delimiter tokens
       punctuation_tokens = tokens.select(&.type.== Obelisk::TokenType::Punctuation)
       punctuation_tokens.size.should be >= 2 # ```crystal and ```
@@ -115,7 +115,7 @@ describe Obelisk::EmbeddedLanguageHelpers do
     it "creates detectors for code blocks" do
       lexer = Obelisk::PlainTextLexer.new
       detector = Obelisk::EmbeddedLanguageHelpers.code_block_detector("ruby", lexer)
-      
+
       text = <<-TEXT
         Some text
         
@@ -125,13 +125,13 @@ describe Obelisk::EmbeddedLanguageHelpers do
         
         More text
         TEXT
-      
+
       state = Obelisk::LexerState.new(text)
       regions = detector.detect_regions(text, state)
-      
+
       regions.size.should eq(1)
       region = regions[0]
-      
+
       content = region.content(text)
       content.should eq("puts \"hello\"\n")
     end
@@ -141,14 +141,14 @@ describe Obelisk::EmbeddedLanguageHelpers do
     it "creates detectors for template expressions" do
       lexer = Obelisk::PlainTextLexer.new
       detector = Obelisk::EmbeddedLanguageHelpers.template_expression_detector("{{", "}}", lexer)
-      
+
       text = "Hello {{ name }}, welcome to {{ site }}!"
-      
+
       state = Obelisk::LexerState.new(text)
       regions = detector.detect_regions(text, state)
-      
+
       regions.size.should eq(2)
-      
+
       regions[0].content(text).should eq(" name ")
       regions[1].content(text).should eq(" site ")
     end
@@ -158,7 +158,7 @@ describe Obelisk::EmbeddedLanguageHelpers do
     it "creates detectors for tag-based embedding" do
       lexer = Obelisk::PlainTextLexer.new
       detector = Obelisk::EmbeddedLanguageHelpers.tag_based_detector("script", lexer)
-      
+
       text = <<-HTML
         <div>
           <script>
@@ -166,13 +166,13 @@ describe Obelisk::EmbeddedLanguageHelpers do
           </script>
         </div>
         HTML
-      
+
       state = Obelisk::LexerState.new(text)
       regions = detector.detect_regions(text, state)
-      
+
       regions.size.should eq(1)
       region = regions[0]
-      
+
       content = region.content(text).strip
       content.should eq("console.log(\"hello\");")
     end

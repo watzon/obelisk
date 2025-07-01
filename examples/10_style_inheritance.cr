@@ -68,15 +68,15 @@ tokens_to_check = [
 tokens_to_check.each do |token_type|
   original_defined = github_style.entries.has_key?(token_type)
   improved_defined = github_improved.entries.has_key?(token_type)
-  
+
   original_style = github_style.get(token_type)
   improved_style = github_improved.get(token_type)
-  
+
   # Check if styles are effectively the same
   same_color = original_style.color.try(&.to_hex) == improved_style.color.try(&.to_hex)
-  same_style = same_color && original_style.bold? == improved_style.bold? && 
+  same_style = same_color && original_style.bold? == improved_style.bold? &&
                original_style.italic? == improved_style.italic?
-  
+
   puts "\n#{token_type}:"
   puts "  Original: #{original_defined ? "explicitly defined" : "inherited"}"
   puts "  Improved: #{improved_defined ? "explicitly defined" : "inherited"}"
@@ -118,12 +118,12 @@ puts "\n=== Custom Style with Inheritance Breaking ==="
 custom_style = Obelisk::Style.new("custom", Obelisk::Color::WHITE).tap do |style|
   # Set base literal style
   style.set(Obelisk::TokenType::Literal, Obelisk::StyleBuilder.new.color("#808080").build)
-  
+
   # Strings inherit from Literal
   style.set(Obelisk::TokenType::LiteralString, Obelisk::StyleBuilder.new.italic.build)
-  
+
   # But escape sequences don't inherit (no_inherit flag)
-  style.set(Obelisk::TokenType::LiteralStringEscape, 
+  style.set(Obelisk::TokenType::LiteralStringEscape,
     Obelisk::StyleBuilder.new.color("#FF0000").bold.no_inherit.build)
 end
 

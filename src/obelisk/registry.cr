@@ -59,7 +59,7 @@ module Obelisk
     def register(lexer : Lexer) : Nil
       config = lexer.config
       register(config.name, lexer, config.aliases)
-      
+
       # Also register by filenames for quick lookup
       config.filenames.each do |pattern|
         # Extract extension from pattern for alias registration
@@ -169,6 +169,5 @@ module Obelisk
     def self.styles : StyleRegistry
       @@styles
     end
-
   end
 end

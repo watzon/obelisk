@@ -138,7 +138,7 @@ puts "6. Creating a minimal custom Chroma theme..."
 minimal_theme = Obelisk::Style.new("Minimal Dark", Obelisk::Color.from_hex("#000000"))
 
 # Set basic colors
-minimal_theme.set(Obelisk::TokenType::Text, 
+minimal_theme.set(Obelisk::TokenType::Text,
   Obelisk::StyleBuilder.new.color("#ffffff").build)
 minimal_theme.set(Obelisk::TokenType::Keyword,
   Obelisk::StyleBuilder.new.color("#ff6b6b").bold.build)

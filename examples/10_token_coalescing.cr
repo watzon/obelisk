@@ -8,17 +8,17 @@ require "../src/obelisk"
 code = %q(
 def fibonacci(n : Int32) : Int32
   return n if n <= 1
-  
+
   # Initialize array for memoization
   fib = Array(Int32).new(n + 1, 0)
   fib[0] = 0
   fib[1] = 1
-  
+
   # Calculate fibonacci numbers
   (2..n).each do |i|
     fib[i] = fib[i - 1] + fib[i - 2]
   end
-  
+
   fib[n]
 end
 
@@ -35,7 +35,7 @@ tokens_without_coalescing = nil
 if lexer
   tokens_without_coalescing = lexer.tokenize(code).to_a
   puts "Without coalescing: #{tokens_without_coalescing.size} tokens"
-  
+
   # Count consecutive tokens of same type
   consecutive_count = 0
   prev_type = nil
@@ -77,7 +77,7 @@ if lexer && tokens_without_coalescing
   puts "After coalescing: #{coalesced_tokens.size} tokens"
   reduction = ((tokens_without_coalescing.size - coalesced_tokens.size).to_f / tokens_without_coalescing.size * 100).round(2)
   puts "Token count reduction: #{reduction}%"
-  
+
   # Show some examples of coalesced tokens
   puts "\nExamples of coalesced tokens:"
   coalesced_tokens.select { |t| t.value.size > 2 && t.type == Obelisk::TokenType::TextWhitespace }.first(3).each do |token|

@@ -273,7 +273,7 @@ module Obelisk
     # Check if this token type is in a specific category
     def in_category?(category : TokenType) : Bool
       current = self
-      while current != current.parent  # Avoid infinite loop
+      while current != current.parent # Avoid infinite loop
         return true if current == category
         current = current.parent
       end

@@ -37,7 +37,7 @@ class SimpleTemplateLexer < Obelisk::ConditionalLexer
       priority: 80
     ))
 
-    # Keywords in expressions  
+    # Keywords in expressions
     add_context_rule("expression", Obelisk::ContextAwareRule.new(
       /\b(if|else|endif|for|endfor)\b/,
       Obelisk::TokenType::Keyword,
@@ -108,7 +108,7 @@ def demonstrate_template_lexer
   tokens = lexer.tokenize(template).to_a
   tokens.each_with_index do |token, i|
     next if token.type == Obelisk::TokenType::Text && token.value.strip.empty?
-    
+
     type_name = token.type.to_s.split("::").last
     puts "%3d: %-20s %s" % [i, type_name, token.value.inspect]
   end

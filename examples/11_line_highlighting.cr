@@ -36,7 +36,7 @@ puts "=== Basic Line Highlighting ==="
 formatter = Obelisk::HTMLFormatter.new(
   with_classes: true,
   with_line_numbers: true,
-  highlight_lines: Set{9, 10, 11, 14, 15}  # Highlight validation method
+  highlight_lines: Set{9, 10, 11, 14, 15} # Highlight validation method
 )
 
 lexer = Obelisk.lexer("crystal")
@@ -45,10 +45,10 @@ style = Obelisk.style("github")
 if lexer && style
   tokens = lexer.tokenize(code)
   html = formatter.format(tokens, style)
-  
+
   # Generate CSS including highlight styles
   css = formatter.css(style)
-  
+
   # Write to an HTML file
   File.write("highlighted_lines.html", <<-HTML)
 <!DOCTYPE html>
@@ -67,7 +67,7 @@ if lexer && style
 </body>
 </html>
 HTML
-  
+
   puts "HTML with highlighted lines written to highlighted_lines.html"
   puts "Open the file in a browser to see the highlighted lines!"
 end
@@ -78,7 +78,7 @@ formatter_with_anchors = Obelisk::HTMLFormatter.new(
   with_classes: true,
   with_line_numbers: true,
   line_anchors: true,
-  highlight_lines: Set{19, 20, 21}  # Highlight birthday method
+  highlight_lines: Set{19, 20, 21} # Highlight birthday method
 )
 
 if lexer && style
@@ -90,6 +90,7 @@ if lexer && style
 end
 
 puts "\n=== Range-based Line Highlighting ==="
+
 # Helper to create ranges
 def line_range(start : Int32, finish : Int32) : Set(Int32)
   (start..finish).to_set
@@ -114,7 +115,7 @@ puts "\n=== Inline Style Line Highlighting ==="
 formatter_inline = Obelisk::HTMLFormatter.new(
   with_classes: false,
   with_line_numbers: true,
-  highlight_lines: Set{24, 25}  # Highlight can_vote? method
+  highlight_lines: Set{24, 25} # Highlight can_vote? method
 )
 
 if lexer && style

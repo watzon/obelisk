@@ -42,21 +42,21 @@ module Obelisk
         # Keep collecting tokens while they have the same type
         current_type = @buffer.first.type
         current_size = @buffer.sum(&.value.size)
-        
+
         loop do
           # Check if we have a next_buffer token
           next_token = if nb = @next_buffer
-            @next_buffer = nil
-            nb
-          else
-            source_token = @source.next
-            if source_token.is_a?(Iterator::Stop)
-              @done = true
-              break
-            else
-              source_token
-            end
-          end
+                         @next_buffer = nil
+                         nb
+                       else
+                         source_token = @source.next
+                         if source_token.is_a?(Iterator::Stop)
+                           @done = true
+                           break
+                         else
+                           source_token
+                         end
+                       end
 
           # If types match and we haven't hit size limit, keep collecting
           max_size = @max_size

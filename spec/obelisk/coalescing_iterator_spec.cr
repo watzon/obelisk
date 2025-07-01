@@ -35,8 +35,8 @@ describe Obelisk::CoalescingIterator do
     coalesced = Obelisk::CoalescingIterator.new(tokens, max_size: 4).to_a
 
     coalesced.size.should eq 2
-    coalesced[0].value.should eq "    "  # First two tokens (2+2=4)
-    coalesced[1].value.should eq "  "     # Last token alone
+    coalesced[0].value.should eq "    " # First two tokens (2+2=4)
+    coalesced[1].value.should eq "  "   # Last token alone
   end
 
   it "handles single tokens without coalescing" do

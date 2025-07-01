@@ -50,7 +50,7 @@ lexer = Obelisk.lexer("crystal")
 if lexer
   tokens = lexer.tokenize(code)
   highlighted_html = formatter.format(tokens, github_style)
-  
+
   # Create the complete HTML page
   html_page = <<-HTML
   <!DOCTYPE html>
@@ -103,7 +103,7 @@ if lexer
   </body>
   </html>
   HTML
-  
+
   puts html_page
 end
 
@@ -131,11 +131,11 @@ formatter = Obelisk::HTMLFormatter.new(with_classes: true)
 styles.each do |style_name|
   style = Obelisk.style(style_name)
   next unless style
-  
+
   css = formatter.css(style)
   rules = css.scan(/\.\w+\s*\{[^}]+\}/).size
   size = css.bytesize
-  
+
   puts "#{style_name}:"
   puts "  Rules: #{rules}"
   puts "  Size: #{size} bytes"

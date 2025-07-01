@@ -7,88 +7,88 @@ module Obelisk
     # Options for highlighting
     struct HighlightOptions
       property coalesce_tokens : Bool = true
-      property max_token_size : Int32? = 32768  # 32KB default max size per token
-      
+      property max_token_size : Int32? = 32768 # 32KB default max size per token
+
       def initialize(@coalesce_tokens = true, @max_token_size = 32768)
       end
     end
 
     # Highlight source code with specified language, formatter, and style
-    def self.highlight(source : String, 
-                      language : String, 
-                      formatter_name : String = "html", 
-                      style_name : String = "github",
-                      options : HighlightOptions = HighlightOptions.new) : String
+    def self.highlight(source : String,
+                       language : String,
+                       formatter_name : String = "html",
+                       style_name : String = "github",
+                       options : HighlightOptions = HighlightOptions.new) : String
       # Get lexer
       lexer = Registry.lexers.get_with_fallback(language)
-      
+
       # Get formatter
       formatter = Registry.formatters.get_with_fallback(formatter_name)
-      
+
       # Get style
       style = Registry.styles.get_with_fallback(style_name)
-      
+
       # Tokenize and format
       tokens = lexer.tokenize(source)
-      
+
       # Apply coalescing if enabled
       if options.coalesce_tokens
         tokens = CoalescingIterator.wrap(tokens, options.max_token_size)
       end
-      
+
       formatter.format(tokens, style)
     end
 
     # Highlight to IO
-    def self.highlight(source : String, 
-                      io : IO, 
-                      language : String, 
-                      formatter_name : String = "html", 
-                      style_name : String = "github",
-                      options : HighlightOptions = HighlightOptions.new) : Nil
+    def self.highlight(source : String,
+                       io : IO,
+                       language : String,
+                       formatter_name : String = "html",
+                       style_name : String = "github",
+                       options : HighlightOptions = HighlightOptions.new) : Nil
       # Get lexer
       lexer = Registry.lexers.get_with_fallback(language)
-      
+
       # Get formatter
       formatter = Registry.formatters.get_with_fallback(formatter_name)
-      
+
       # Get style
       style = Registry.styles.get_with_fallback(style_name)
-      
+
       # Tokenize and format
       tokens = lexer.tokenize(source)
-      
+
       # Apply coalescing if enabled
       if options.coalesce_tokens
         tokens = CoalescingIterator.wrap(tokens, options.max_token_size)
       end
-      
+
       formatter.format(tokens, style, io)
     end
 
     # Highlight file by auto-detecting language from filename
-    def self.highlight_file(filename : String, 
-                           formatter_name : String = "html", 
-                           style_name : String = "github",
-                           options : HighlightOptions = HighlightOptions.new) : String
+    def self.highlight_file(filename : String,
+                            formatter_name : String = "html",
+                            style_name : String = "github",
+                            options : HighlightOptions = HighlightOptions.new) : String
       # Read file content
       source = File.read(filename)
-      
+
       # Auto-detect lexer from filename
       lexer = Registry.lexers.by_filename(filename) || Registry.lexers.get_with_fallback("text")
-      
+
       # Get formatter and style
       formatter = Registry.formatters.get_with_fallback(formatter_name)
       style = Registry.styles.get_with_fallback(style_name)
-      
+
       # Tokenize and format
       tokens = lexer.tokenize(source)
-      
+
       # Apply coalescing if enabled
       if options.coalesce_tokens
         tokens = CoalescingIterator.wrap(tokens, options.max_token_size)
       end
-      
+
       formatter.format(tokens, style)
     end
 

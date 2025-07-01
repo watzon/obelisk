@@ -13,7 +13,7 @@ module Obelisk
     # Create color from hex string
     def self.from_hex(hex : String) : Color
       hex = hex.lstrip('#')
-      
+
       case hex.size
       when 3
         # Short hex format: #RGB -> #RRGGBB
@@ -28,7 +28,7 @@ module Obelisk
       else
         raise "Invalid hex color format: #{hex}"
       end
-      
+
       new(r, g, b)
     end
 
@@ -69,11 +69,11 @@ module Obelisk
     end
 
     # Common colors
-    BLACK = Color.new(0u8, 0u8, 0u8)
-    WHITE = Color.new(255u8, 255u8, 255u8)
-    RED = Color.new(255u8, 0u8, 0u8)
-    GREEN = Color.new(0u8, 255u8, 0u8)
-    BLUE = Color.new(0u8, 0u8, 255u8)
+    BLACK       = Color.new(0u8, 0u8, 0u8)
+    WHITE       = Color.new(255u8, 255u8, 255u8)
+    RED         = Color.new(255u8, 0u8, 0u8)
+    GREEN       = Color.new(0u8, 255u8, 0u8)
+    BLUE        = Color.new(0u8, 0u8, 255u8)
     TRANSPARENT = Color.new(0u8, 0u8, 0u8)
   end
 
@@ -105,7 +105,7 @@ module Obelisk
     getter underline : Trilean
     getter no_inherit : Bool
 
-    def initialize(@color : Color? = nil, 
+    def initialize(@color : Color? = nil,
                    @background : Color? = nil,
                    @bold : Trilean = Trilean::Pass,
                    @italic : Trilean = Trilean::Pass,
@@ -229,7 +229,7 @@ module Obelisk
       # Apply parent category styles
       current_type = token_type
       hierarchy = [] of TokenType
-      
+
       # Build hierarchy chain
       while current_type != current_type.parent
         hierarchy << current_type.parent
@@ -276,5 +276,4 @@ module Obelisk
       style
     end
   end
-
 end

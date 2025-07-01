@@ -14,10 +14,10 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       style.name.should eq("test-theme")
       style.background.should eq(Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Check comment style
       comment_style = style.get_direct(Obelisk::TokenType::Comment)
       comment_style.should_not be_nil
@@ -46,9 +46,9 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       style.background.should eq(Obelisk::Color.from_hex("#ffffff"))
-      
+
       # Background entry should set Text token with foreground color
       text_style = style.get_direct(Obelisk::TokenType::Text)
       text_style.should_not be_nil
@@ -67,9 +67,9 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       style.background.should eq(Obelisk::Color.from_hex("#1e1e1e"))
-      
+
       # Check function name style
       func_style = style.get_direct(Obelisk::TokenType::NameFunction)
       func_style.should_not be_nil
@@ -103,7 +103,7 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("fallback-name")
-      
+
       style.name.should eq("fallback-name")
     end
 
@@ -118,10 +118,10 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       # Should parse successfully, ignoring unknown types
       style.name.should eq("test-theme")
-      
+
       keyword_style = style.get_direct(Obelisk::TokenType::Keyword)
       keyword_style.should_not be_nil
       keyword_style.not_nil!.color.should eq(Obelisk::Color.from_hex("#0000ff"))
@@ -138,10 +138,10 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       # Should parse successfully, ignoring entries without style
       style.name.should eq("test-theme")
-      
+
       comment_style = style.get_direct(Obelisk::TokenType::Comment)
       comment_style.should_not be_nil
       comment_style.not_nil!.color.should eq(Obelisk::Color.from_hex("#008000"))
@@ -158,9 +158,9 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       style.background.should eq(Obelisk::Color.from_hex("#fff"))
-      
+
       keyword_style = style.get_direct(Obelisk::TokenType::Keyword)
       keyword_style.should_not be_nil
       keyword_style.not_nil!.color.should eq(Obelisk::Color.from_hex("#f00"))
@@ -201,7 +201,7 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       style.background.should eq(Obelisk::Color::WHITE)
     end
 
@@ -227,7 +227,7 @@ describe Obelisk::ChromaParser do
 
       parser = Obelisk::ChromaParser.new(xml)
       style = parser.parse("test")
-      
+
       # Verify a selection of mappings
       style.get_direct(Obelisk::TokenType::Error).should_not be_nil
       style.get_direct(Obelisk::TokenType::Other).should_not be_nil

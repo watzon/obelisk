@@ -20,7 +20,7 @@ describe Obelisk::Lexers::Crystal do
           "Hello, \#{name}!"
         end
         CODE
-      
+
       score = lexer.analyze(crystal_code)
       score.should be > 0.5
     end
@@ -31,7 +31,7 @@ describe Obelisk::Lexers::Crystal do
           return "Hello, " + name + "!";
         }
         CODE
-      
+
       score = lexer.analyze(javascript_code)
       score.should be < 0.3
     end
@@ -41,7 +41,7 @@ describe Obelisk::Lexers::Crystal do
         @[JSON::Field(key: "user_name")]
         property username : String
         CODE
-      
+
       score = lexer.analyze(crystal_code)
       score.should be > 0.3
     end
@@ -51,7 +51,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes keywords correctly" do
       code = "def class module"
       tokens = lexer.tokenize(code).to_a
-      
+
       keyword_tokens = tokens.select { |t| t.type == Obelisk::TokenType::Keyword }
       keyword_tokens.size.should eq 3
       keyword_tokens.map(&.value).should eq ["def", "class", "module"]
@@ -60,7 +60,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes strings correctly" do
       code = %("Hello, world!")
       tokens = lexer.tokenize(code).to_a
-      
+
       string_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralStringDouble }
       string_tokens.size.should be >= 1
     end
@@ -68,7 +68,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes numbers correctly" do
       code = "42 3.14 0x1a 0b101"
       tokens = lexer.tokenize(code).to_a
-      
+
       number_tokens = tokens.select { |t| t.type.in_category?(Obelisk::TokenType::LiteralNumber) }
       number_tokens.size.should eq 4
     end
@@ -76,7 +76,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes instance variables" do
       code = "@name @age"
       tokens = lexer.tokenize(code).to_a
-      
+
       ivar_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameVariableInstance }
       ivar_tokens.size.should eq 2
       ivar_tokens.map(&.value).should eq ["@name", "@age"]
@@ -85,7 +85,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes class variables" do
       code = "@@count @@total"
       tokens = lexer.tokenize(code).to_a
-      
+
       cvar_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameVariableClass }
       cvar_tokens.size.should eq 2
       cvar_tokens.map(&.value).should eq ["@@count", "@@total"]
@@ -94,7 +94,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes symbols" do
       code = ":name :+ :\"complex symbol\""
       tokens = lexer.tokenize(code).to_a
-      
+
       symbol_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralStringSymbol }
       symbol_tokens.size.should be >= 2
     end
@@ -102,7 +102,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes comments" do
       code = "# This is a comment\ncode # inline comment"
       tokens = lexer.tokenize(code).to_a
-      
+
       comment_tokens = tokens.select { |t| t.type == Obelisk::TokenType::CommentSingle }
       comment_tokens.size.should eq 2
     end
@@ -110,7 +110,7 @@ describe Obelisk::Lexers::Crystal do
     it "handles string interpolation" do
       code = %("Hello, \#{name}!")
       tokens = lexer.tokenize(code).to_a
-      
+
       # Should have string parts and interpolation markers
       interp_tokens = tokens.select { |t| t.type == Obelisk::TokenType::LiteralStringInterpol }
       interp_tokens.size.should be >= 1
@@ -119,7 +119,7 @@ describe Obelisk::Lexers::Crystal do
     it "tokenizes Crystal-specific types" do
       code = "Array(String) Hash(String, Int32)"
       tokens = lexer.tokenize(code).to_a
-      
+
       type_tokens = tokens.select { |t| t.type == Obelisk::TokenType::KeywordType }
       type_tokens.map(&.value).should contain("Array")
       type_tokens.map(&.value).should contain("String")

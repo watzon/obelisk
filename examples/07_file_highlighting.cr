@@ -6,7 +6,7 @@ require "../src/obelisk"
 # Function to detect language from filename
 def detect_language(filename : String) : String?
   lexers = Obelisk::Registry.lexers.all
-  
+
   # Try to find a lexer that matches the filename
   lexer = lexers.find { |l| l.matches_filename?(filename) }
   lexer.try(&.name)
@@ -16,12 +16,12 @@ end
 def highlight_file(path : String, formatter = "html", style = "github") : String?
   # Detect language from filename
   language = detect_language(path)
-  
+
   unless language
     puts "Warning: Could not detect language for #{path}"
     return nil
   end
-  
+
   # Read file content
   begin
     content = File.read(path)
@@ -29,7 +29,7 @@ def highlight_file(path : String, formatter = "html", style = "github") : String
     puts "Error reading file: #{ex.message}"
     return nil
   end
-  
+
   # Highlight the content
   Obelisk.highlight(content, language, formatter, style)
 end
@@ -58,7 +58,7 @@ samples = {
 class Example
   def initialize(@name : String)
   end
-  
+
   def greet
     puts "Hello, #{@name}!"
   end
@@ -81,16 +81,16 @@ Example.new("Obelisk").greet
 application:
   name: Obelisk
   version: 1.0.0
-  
+
 features:
   - syntax-highlighting
   - multiple-languages
   - custom-themes
-  
+
 database:
   host: localhost
   port: 5432
-)
+),
 }
 
 # Write sample files
@@ -103,13 +103,13 @@ end
 # Highlight each file
 samples.keys.each do |filename|
   path = File.join(temp_dir, filename)
-  
+
   puts "\n### #{filename} ###"
-  
+
   # Detect language
   language = detect_language(filename)
   puts "Detected language: #{language || "unknown"}"
-  
+
   # Highlight with terminal colors
   highlighted = highlight_file(path, "terminal", "github")
   puts highlighted if highlighted
@@ -127,10 +127,10 @@ puts "\n=== Batch File Processing ==="
 # Simulate batch processing of multiple files
 file_list = [
   "src/main.cr",
-  "config/database.yml", 
+  "config/database.yml",
   "package.json",
   "README.md",
-  "data.xml"
+  "data.xml",
 ]
 
 puts "Language detection for common files:"
@@ -146,22 +146,22 @@ puts "\n=== Generating HTML for Source Files ==="
 def generate_html_file(source_path : String, output_path : String, style = "github")
   language = detect_language(source_path)
   return false unless language
-  
+
   begin
     content = File.read(source_path)
     formatter = Obelisk::HTMLFormatter.new(
       with_classes: true,
       with_line_numbers: true
     )
-    
+
     lexer = Obelisk.lexer(language)
     style_obj = Obelisk.style(style)
-    
+
     if lexer && style_obj
       tokens = lexer.tokenize(content)
       highlighted = formatter.format(tokens, style_obj)
       css = formatter.css(style_obj)
-      
+
       html = <<-HTML
       <!DOCTYPE html>
       <html>
@@ -195,14 +195,14 @@ def generate_html_file(source_path : String, output_path : String, style = "gith
       </body>
       </html>
       HTML
-      
+
       File.write(output_path, html)
       return true
     end
   rescue ex
     puts "Error: #{ex.message}"
   end
-  
+
   false
 end
 

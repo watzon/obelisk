@@ -68,7 +68,7 @@ describe Obelisk::Token do
     it "creates a copy of the token" do
       original = Obelisk::Token.new(Obelisk::TokenType::Name, "test")
       cloned = original.clone
-      
+
       cloned.type.should eq original.type
       cloned.value.should eq original.value
       cloned.should_not be original
