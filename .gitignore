@@ -11,3 +11,4 @@
 
 # Benchmark test data (downloaded by script)
 /benchmarks/data/
+.DS_Store
