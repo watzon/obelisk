@@ -95,9 +95,10 @@ module Obelisk
     end
 
     # Static helper to wrap any iterator with coalescing
-    def self.wrap(source : TokenIterator, max_size : Int32? = nil) : TokenIterator
-      # Temporarily disable coalescing to avoid memory issues
-      source
+    # Default max_size of 4KB prevents unbounded growth while still
+    # providing significant performance benefits for typical code
+    def self.wrap(source : TokenIterator, max_size : Int32? = 4096) : TokenIterator
+      CoalescingIterator.new(source, max_size)
     end
   end
 end
