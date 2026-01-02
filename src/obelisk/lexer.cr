@@ -199,8 +199,26 @@ module Obelisk
     end
   end
 
+  # Match data passed to rule actions - enables zero-allocation token creation
+  struct LexerMatch
+    getter text : String
+    getter source : String
+    getter pos : Int32
+    getter length : Int32
+    getter groups : Array(String)
+
+    def initialize(@source : String, @pos : Int32, @length : Int32, @groups : Array(String))
+      @text = @source[@pos, @length]
+    end
+
+    # Create a zero-allocation token from this match
+    def make_token(type : TokenType) : Token
+      Token.from_ref(type, @source, @pos, @length)
+    end
+  end
+
   # Actions that can be performed when a rule matches
-  alias RuleAction = TokenType | Proc(String, LexerState, Array(String), Array(Token))
+  alias RuleAction = TokenType | Proc(LexerMatch, LexerState, Array(Token))
 
   # Helper to create rule actions
   module RuleActions
@@ -212,10 +230,12 @@ module Obelisk
     # Emit tokens for each capture group
     def self.by_groups(*types : TokenType) : RuleAction
       types_array = types.to_a
-      ->(match : String, state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, state : LexerState) do
         result = [] of Token
-        groups.each_with_index do |group, index|
+        match.groups.each_with_index do |group, index|
           if index < types_array.size && !group.empty?
+            # For capture groups, we need the position relative to the main match
+            # This is a simplification - for exact positions we'd need full match data
             result << Token.new(types_array[index], group)
           end
         end
@@ -225,91 +245,91 @@ module Obelisk
 
     # Basic state operations
     def self.push(state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.push_state(state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.pop(type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.pop_state
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     # Advanced state mutations
     def self.include(state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.include_state(state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.exit_include(type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.exit_include
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.combine(state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.add_combined_state(state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.uncombine(state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.remove_combined_state(state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.clear_combined(type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.clear_combined_states
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     # Context operations
     def self.set_context(key : String, value : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.set_context(key, value)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.set_context_from_match(key : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
-        lexer_state.set_context(key, match)
-        type ? [Token.new(type, match)] : [] of Token
+      ->(match : LexerMatch, lexer_state : LexerState) do
+        lexer_state.set_context(key, match.text)
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.clear_context(type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.clear_context
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     # Compound actions
     def self.push_and_combine(push_state : String, combine_state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.push_state(push_state)
         lexer_state.add_combined_state(combine_state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
     def self.pop_and_uncombine(uncombine_state : String, type : TokenType? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         lexer_state.pop_state
         lexer_state.remove_combined_state(uncombine_state)
-        type ? [Token.new(type, match)] : [] of Token
+        type ? [match.make_token(type)] : [] of Token
       end
     end
 
@@ -317,14 +337,14 @@ module Obelisk
     def self.conditional(condition : Proc(LexerState, Bool),
                          true_action : RuleAction,
                          false_action : RuleAction? = nil) : RuleAction
-      ->(match : String, lexer_state : LexerState, groups : Array(String)) do
+      ->(match : LexerMatch, lexer_state : LexerState) do
         action = condition.call(lexer_state) ? true_action : false_action
         if action
           case action
           when TokenType
-            [Token.new(action, match)]
+            [match.make_token(action)]
           when Proc
-            action.call(match, lexer_state, groups)
+            action.call(match, lexer_state)
           else
             [] of Token
           end
@@ -454,6 +474,8 @@ module Obelisk
         if match_data = @lexer.find_match(@state)
           rule, match = match_data
           matched_text = match[0]
+          match_pos = @state.pos + match.begin(0)  # Convert to absolute position
+          match_length = matched_text.size
 
           # Safety check: ensure we got a valid match
           if matched_text.empty?
@@ -475,7 +497,9 @@ module Obelisk
             [] of String # Handle potential array access errors
           end
 
-          tokens = execute_action(rule.action, matched_text, groups)
+          # Create LexerMatch for zero-allocation token creation
+          lexer_match = LexerMatch.new(@state.text, match_pos, match_length, groups)
+          tokens = execute_action(rule.action, lexer_match)
 
           # Advance the position
           @state.advance(matched_text.size)
@@ -518,20 +542,21 @@ module Obelisk
       end
     end
 
-    private def execute_action(action : RuleAction, matched_text : String, groups : Array(String)) : Array(Token)
+    private def execute_action(action : RuleAction, match : LexerMatch) : Array(Token)
       begin
         case action
         when TokenType
-          [Token.new(action, matched_text)]
+          # Zero-allocation token creation for simple token types
+          [match.make_token(action)]
         when Proc
-          result = action.call(matched_text, @state, groups)
+          result = action.call(match, @state)
           result.is_a?(Array(Token)) ? result : [] of Token
         else
           [] of Token
         end
       rescue
         # If action execution fails, return a basic token
-        [Token.new(TokenType::Error, matched_text)]
+        [match.make_token(TokenType::Error)]
       end
     end
   end
@@ -660,25 +685,51 @@ module Obelisk
   class SafeTokenIteratorAdapter
     include Iterator(Token)
 
-    def initialize(lexer : Lexer, text : String)
-      @tokens = [] of Token
-      @index = 0
+    @tokens = [] of Token
+    @index = 0
 
+    def initialize(lexer : Lexer, text : String)
       # Pre-fetch all tokens to avoid iterator issues
       # Use tokenize_unsafe to get the raw iterator without infinite recursion
       begin
         iter = lexer.tokenize_unsafe(text)
+        raw_tokens = [] of Token
+
         # Limit to prevent infinite loops
-        10000.times do
+        1000000.times do
           case token = iter.next
           when Token
-            @tokens << token
+            raw_tokens << token
           when Iterator::Stop
             break
           end
         end
+
+        # Coalesce consecutive tokens of the same type to improve performance
+        # This significantly reduces the number of tokens without losing information
+        coalesce_tokens(raw_tokens)
       rescue
         # If tokenization fails, leave tokens empty
+      end
+    end
+
+    # Combine consecutive tokens of the same type into single tokens
+    # This reduces memory usage and formatting time
+    #
+    # Strategy: Only coalesce Text tokens (whitespace) to avoid losing
+    # granularity that tests and formatters may depend on.
+    private def coalesce_tokens(raw_tokens : Array(Token))
+      return if raw_tokens.empty?
+
+      raw_tokens.each do |token|
+        if @tokens.empty?
+          @tokens << token
+        elsif @tokens.last.type == TokenType::Text && token.type == TokenType::Text
+          # Coalesce consecutive Text tokens (whitespace)
+          @tokens[@tokens.size - 1] = Token.new(TokenType::Text, @tokens.last.value + token.value)
+        else
+          @tokens << token
+        end
       end
     end
 

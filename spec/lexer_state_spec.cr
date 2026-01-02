@@ -156,11 +156,12 @@ describe Obelisk::RuleActions do
       state = Obelisk::LexerState.new("test")
       action = Obelisk::RuleActions.include("interpolation", Obelisk::TokenType::Punctuation)
 
-      tokens = action.call("${", state, [] of String)
+      match = Obelisk::LexerMatch.new("test", 0, 2, [] of String)
+      tokens = action.call(match, state)
 
       tokens.size.should eq(1)
       tokens[0].type.should eq(Obelisk::TokenType::Punctuation)
-      tokens[0].value.should eq("${")
+      tokens[0].value.should eq("te")  # First 2 chars of "test"
       state.current_include_state.should eq("interpolation")
     end
 
@@ -169,7 +170,8 @@ describe Obelisk::RuleActions do
       state.include_state("interpolation")
 
       action = Obelisk::RuleActions.exit_include(Obelisk::TokenType::Punctuation)
-      tokens = action.call("}", state, [] of String)
+      match = Obelisk::LexerMatch.new("test", 0, 1, [] of String)
+      tokens = action.call(match, state)
 
       tokens.size.should eq(1)
       tokens[0].type.should eq(Obelisk::TokenType::Punctuation)
@@ -180,7 +182,8 @@ describe Obelisk::RuleActions do
       state = Obelisk::LexerState.new("test")
       action = Obelisk::RuleActions.combine("tag")
 
-      tokens = action.call("<", state, [] of String)
+      match = Obelisk::LexerMatch.new("test", 0, 1, [] of String)
+      tokens = action.call(match, state)
 
       tokens.size.should eq(0)
       state.has_combined_state?("tag").should be_true
@@ -190,7 +193,8 @@ describe Obelisk::RuleActions do
       state = Obelisk::LexerState.new("test")
       action = Obelisk::RuleActions.set_context("quote", "single")
 
-      tokens = action.call("'", state, [] of String)
+      match = Obelisk::LexerMatch.new("test", 0, 1, [] of String)
+      tokens = action.call(match, state)
 
       tokens.size.should eq(0)
       state.get_context("quote").should eq("single")
@@ -207,7 +211,8 @@ describe Obelisk::RuleActions do
         Obelisk::TokenType::Name
       )
 
-      tokens = action.call("var", state, [] of String)
+      match = Obelisk::LexerMatch.new("test", 0, 3, [] of String)
+      tokens = action.call(match, state)
 
       tokens.size.should eq(1)
       tokens[0].type.should eq(Obelisk::TokenType::Keyword)

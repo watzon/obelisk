@@ -282,21 +282,56 @@ module Obelisk
   end
 
   # Represents a single token with its type and value
+  #
+  # PERFORMANCE: Stores a reference (source text + position) instead of
+  # copying the value string. This avoids allocating thousands of strings during
+  # tokenization. The value is lazily computed when accessed.
   class Token
     getter type : TokenType
-    getter value : String
 
-    def initialize(@type : TokenType, @value : String)
+    # Internal: store source reference and position
+    @source : String?
+    @pos : Int32
+    @length : Int32
+    @value : String?
+
+    def initialize(@type : TokenType, value : String)
+      @source = nil
+      @pos = 0
+      @length = value.size
+      @value = value  # Store the value directly (backward compatibility)
+    end
+
+    # Reference-based constructor - avoids string copy
+    protected def initialize(@type : TokenType, @source : String, @pos : Int32, @length : Int32)
+      @value = nil  # Will be computed lazily
+    end
+
+    # Create a token from a reference into source text
+    def self.from_ref(type : TokenType, source : String, pos : Int32, length : Int32) : Token
+      Token.new(type, source, pos, length)
+    end
+
+    # Get the token value
+    # Computes from source reference if needed, otherwise returns cached value
+    def value : String
+      if cached = @value
+        cached
+      elsif src = @source
+        src[@pos, @length]
+      else
+        ""  # Shouldn't happen
+      end
     end
 
     # Clone this token
     def clone : Token
-      Token.new(@type, @value)
+      Token.new(@type, value)
     end
 
     # Check if this is an EOF token
     def eof? : Bool
-      @value.empty? && @type == TokenType::Text
+      value.empty? && @type == TokenType::Text
     end
 
     # Get the CSS class for this token
@@ -305,7 +340,7 @@ module Obelisk
     end
 
     def to_s(io : IO) : Nil
-      io << "Token(#{@type}, #{@value.inspect})"
+      io << "Token(#{@type}, #{value.inspect})"
     end
   end
 

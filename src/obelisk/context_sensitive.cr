@@ -513,7 +513,9 @@ module Obelisk
       when TokenType
         [Token.new(action, matched_text)]
       when Proc
-        action.call(matched_text, @state, groups)
+        # Create a LexerMatch for the proc
+        lexer_match = LexerMatch.new(@state.text, @state.pos, matched_text.size, groups)
+        action.call(lexer_match, @state)
       else
         [] of Token
       end
@@ -546,7 +548,7 @@ module Obelisk
         end
       }
 
-      action = ->(match : String, state : LexerState, groups : Array(String)) {
+      action = ->(match : LexerMatch, state : LexerState) {
         # Determine token type based on current state
         token_type = TokenType::Comment
         context_conditions.each do |state_name, type|
@@ -555,7 +557,7 @@ module Obelisk
             break
           end
         end
-        [Token.new(token_type, match)]
+        [match.make_token(token_type)]
       }
 
       ContextAwareRule.new(
