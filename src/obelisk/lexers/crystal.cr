@@ -155,10 +155,10 @@ module Obelisk::Lexers
           LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
           LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
           LexerRule.new(BACKTICK, RuleActions.push("string_backtick", TokenType::LiteralStringBacktick)),
-          LexerRule.new(HEREDOC_START, ->(match : String, state : LexerState, groups : Array(String)) {
-            delimiter = groups[0]
+          LexerRule.new(HEREDOC_START, ->(match : LexerMatch, state : LexerState) {
+            delimiter = match.groups[0]
             state.push_state("heredoc_#{delimiter}")
-            [Token.new(TokenType::LiteralStringHeredoc, match)]
+            [match.make_token(TokenType::LiteralStringHeredoc)]
           }),
           LexerRule.new(REGEX_LITERAL, TokenType::LiteralStringRegex),
           LexerRule.new(METHOD_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),

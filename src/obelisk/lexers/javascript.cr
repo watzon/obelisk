@@ -120,8 +120,11 @@ module Obelisk::Lexers
       [score, 1.0f32].min
     end
 
+    # Cache rules to avoid recreating the Hash on every token
+    @@rules : Hash(String, Array(LexerRule))?
+
     def rules : Hash(String, Array(LexerRule))
-      {
+      @@rules ||= {
         "root" => [
           # Whitespace
           LexerRule.new(WHITESPACE, TokenType::Text),

@@ -75,11 +75,11 @@ module Obelisk::Lexers
           LexerRule.new(/`/, RuleActions.push("backtick_substitution", TokenType::LiteralStringBacktick)),
 
           # Heredocs
-          LexerRule.new(/<<-?\s*(['"]?)(\w+)\1/, ->(match : String, state : LexerState, groups : Array(String)) {
-            delimiter = groups[1]
+          LexerRule.new(/<<-?\s*(['"]?)(\w+)\1/, ->(match : LexerMatch, state : LexerState) {
+            delimiter = match.groups[1]
             state.push_state("heredoc")
             state.set_context("heredoc_delimiter", delimiter)
-            [Token.new(TokenType::Operator, match)]
+            [match.make_token(TokenType::Operator)]
           }),
 
           # Strings
@@ -133,13 +133,13 @@ module Obelisk::Lexers
         ],
 
         "heredoc" => [
-          LexerRule.new(/^(\w+)$/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/^(\w+)$/, ->(match : LexerMatch, state : LexerState) {
             delimiter = state.get_context("heredoc_delimiter")
-            if delimiter && groups[0] == delimiter
+            if delimiter && match.groups[0] == delimiter
               state.pop_state
-              [Token.new(TokenType::LiteralStringHeredoc, match)]
+              [match.make_token(TokenType::LiteralStringHeredoc)]
             else
-              [Token.new(TokenType::LiteralStringHeredoc, match)]
+              [match.make_token(TokenType::LiteralStringHeredoc)]
             end
           }),
           LexerRule.new(/.+/, TokenType::LiteralStringHeredoc),

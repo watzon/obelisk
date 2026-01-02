@@ -110,21 +110,21 @@ module Obelisk::Lexers
           LexerRule.new(/#!?\[/, RuleActions.push("attribute", TokenType::NameDecorator)),
 
           # Macros with format strings
-          LexerRule.new(/\b(println!|print!|eprintln!|eprint!|format!|format_args!|panic!|todo!|unreachable!|unimplemented!)\s*\(\s*"/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/\b(println!|print!|eprintln!|eprint!|format!|format_args!|panic!|todo!|unreachable!|unimplemented!)\s*\(\s*"/, ->(match : LexerMatch, state : LexerState) {
             # Extract macro name
-            macro_name = match[/\w+!/]
+            macro_name = match.text[/\w+!/]
             state.push_state("formatted_string")
             [
               Token.new(TokenType::NameFunctionMagic, macro_name),
-              Token.new(TokenType::Text, match[macro_name.size..-2]),
+              Token.new(TokenType::Text, match.text[macro_name.size..-2]),
               Token.new(TokenType::LiteralStringDouble, "\""),
             ]
           }),
 
           # Regular macros
-          LexerRule.new(/[a-zA-Z_]\w*!\s*[\(\[\{]/, ->(match : String, state : LexerState, groups : Array(String)) {
-            macro_name = match[/\w+!/]
-            rest = match[macro_name.size..-1]
+          LexerRule.new(/[a-zA-Z_]\w*!\s*[\(\[\{]/, ->(match : LexerMatch, state : LexerState) {
+            macro_name = match.text[/\w+!/]
+            rest = match.text[macro_name.size..-1]
             [
               Token.new(TokenType::NameFunctionMagic, macro_name),
               Token.new(TokenType::Text, rest[0..-2]),
@@ -149,11 +149,11 @@ module Obelisk::Lexers
           LexerRule.new(/[0-9][0-9_]*([ui](8|16|32|64|128|size))?/, TokenType::LiteralNumberInteger),
 
           # Raw strings
-          LexerRule.new(/r#+"/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/r#+"/, ->(match : LexerMatch, state : LexerState) {
             # Count the number of # symbols
-            hash_count = match.count('#') - 1
+            hash_count = match.text.count('#') - 1
             state.push_state("rawstring_#{hash_count}")
-            [Token.new(TokenType::LiteralString, match)]
+            [match.make_token(TokenType::LiteralString)]
           }),
 
           # Byte strings
@@ -242,9 +242,9 @@ module Obelisk::Lexers
         (0..10).each do |n|
           closing = "\"" + "#" * n
           rules["rawstring_#{n}"] = [
-            LexerRule.new(/.*?#{Regex.escape(closing)}/, ->(match : String, state : LexerState, groups : Array(String)) {
+            LexerRule.new(/.*?#{Regex.escape(closing)}/, ->(match : LexerMatch, state : LexerState) {
               state.pop_state
-              [Token.new(TokenType::LiteralString, match)]
+              [match.make_token(TokenType::LiteralString)]
             }),
             LexerRule.new(/.+/, TokenType::LiteralString),
           ]

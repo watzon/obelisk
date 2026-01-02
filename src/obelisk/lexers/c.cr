@@ -110,11 +110,11 @@ module Obelisk::Lexers
           LexerRule.new(/(?:u|U|L)"/, RuleActions.push("string", TokenType::LiteralStringDouble)),
 
           # Raw string literals (C++11)
-          LexerRule.new(/R"([^(]*)\(/, ->(match : String, state : LexerState, groups : Array(String)) {
-            delimiter = groups[0]
+          LexerRule.new(/R"([^(]*)\(/, ->(match : LexerMatch, state : LexerState) {
+            delimiter = match.groups[0]
             state.push_state("raw_string_#{delimiter}")
             state.set_context("raw_delimiter", delimiter)
-            [Token.new(TokenType::LiteralStringDouble, match)]
+            [match.make_token(TokenType::LiteralStringDouble)]
           }),
 
           # Scope resolution operator

@@ -65,17 +65,17 @@ module Obelisk::Lexers
       {
         "root" => [
           # YAML frontmatter (check state for document start AND that there's a closing ---)
-          LexerRule.new(/^---[ \t]*(?=\n|$)/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/^---[ \t]*(?=\n|$)/, ->(match : LexerMatch, state : LexerState) {
             # Only treat as frontmatter if:
             # 1. We're at the very beginning (position 0 or only whitespace before)
             # 2. There's a closing --- somewhere later in the text
             if (state.pos == 0 || state.text[0...state.pos].strip.empty?) &&
-               state.text[state.pos + match.size..].includes?("\n---")
+               state.text[state.pos + match.length..].includes?("\n---")
               state.push_state("frontmatter")
-              [Token.new(TokenType::CommentPreproc, match)]
+              [match.make_token(TokenType::CommentPreproc)]
             else
               # Otherwise treat as horizontal rule
-              [Token.new(TokenType::Punctuation, match)]
+              [match.make_token(TokenType::Punctuation)]
             end
           }),
 
@@ -140,23 +140,23 @@ module Obelisk::Lexers
           LexerRule.new(/`([^`]+)`/, TokenType::LiteralStringBacktick),
 
           # Images ![alt](url)
-          LexerRule.new(/!\[([^\]]*)\]\(([^)]+)\)/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/!\[([^\]]*)\]\(([^)]+)\)/, ->(match : LexerMatch, state : LexerState) {
             tokens = [] of Token
             tokens << Token.new(TokenType::Punctuation, "![")
-            tokens << Token.new(TokenType::NameAttribute, groups[0])
+            tokens << Token.new(TokenType::NameAttribute, match.groups[0])
             tokens << Token.new(TokenType::Punctuation, "](")
-            tokens << Token.new(TokenType::LiteralString, groups[1])
+            tokens << Token.new(TokenType::LiteralString, match.groups[1])
             tokens << Token.new(TokenType::Punctuation, ")")
             tokens
           }),
 
           # Links [text](url)
-          LexerRule.new(/\[([^\]]+)\]\(([^)]+)\)/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/\[([^\]]+)\]\(([^)]+)\)/, ->(match : LexerMatch, state : LexerState) {
             tokens = [] of Token
             tokens << Token.new(TokenType::Punctuation, "[")
-            tokens << Token.new(TokenType::NameAttribute, groups[0])
+            tokens << Token.new(TokenType::NameAttribute, match.groups[0])
             tokens << Token.new(TokenType::Punctuation, "](")
-            tokens << Token.new(TokenType::LiteralString, groups[1])
+            tokens << Token.new(TokenType::LiteralString, match.groups[1])
             tokens << Token.new(TokenType::Punctuation, ")")
             tokens
           }),

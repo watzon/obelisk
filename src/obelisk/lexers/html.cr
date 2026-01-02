@@ -174,11 +174,11 @@ module Obelisk::Lexers
             RuleActions.by_groups(TokenType::NameTag, TokenType::Text, TokenType::Punctuation)),
 
           # Opening tags
-          LexerRule.new(TAG_OPEN, ->(match : String, state : LexerState, groups : Array(String)) {
-            tag_name = groups[0].downcase
+          LexerRule.new(TAG_OPEN, ->(match : LexerMatch, state : LexerState) {
+            tag_name = match.groups[0].downcase
             state.set_context("current_tag", tag_name)
             state.push_state("tag")
-            [Token.new(TokenType::NameTag, match)]
+            [match.make_token(TokenType::NameTag)]
           }),
 
           # HTML entities (using helper for consolidation)
@@ -207,17 +207,17 @@ module Obelisk::Lexers
           LexerRule.new(WHITESPACE, TokenType::Text),
 
           # End of tag
-          LexerRule.new(TAG_END, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(TAG_END, ->(match : LexerMatch, state : LexerState) {
             state.clear_context
             state.pop_state
-            [Token.new(TokenType::Punctuation, match)]
+            [match.make_token(TokenType::Punctuation)]
           }),
 
           # Self-closing tag
-          LexerRule.new(TAG_SELF_CLOSE, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(TAG_SELF_CLOSE, ->(match : LexerMatch, state : LexerState) {
             state.clear_context
             state.pop_state
-            [Token.new(TokenType::Punctuation, match)]
+            [match.make_token(TokenType::Punctuation)]
           }),
 
           # Attribute names

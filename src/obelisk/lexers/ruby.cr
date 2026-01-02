@@ -188,11 +188,11 @@ module Obelisk::Lexers
           LexerRule.new(PERCENT_SQUARE_START, RuleActions.push("percent_string_square", TokenType::LiteralStringOther)),
           LexerRule.new(PERCENT_PAREN_START, RuleActions.push("percent_string_paren", TokenType::LiteralStringOther)),
           LexerRule.new(PERCENT_ANGLE_START, RuleActions.push("percent_string_angle", TokenType::LiteralStringOther)),
-          LexerRule.new(PERCENT_OTHER_START, ->(match : String, state : LexerState, groups : Array(String)) {
-            delimiter = groups[0]
+          LexerRule.new(PERCENT_OTHER_START, ->(match : LexerMatch, state : LexerState) {
+            delimiter = match.groups[0]
             state.push_state("percent_string_other")
             state.set_context("delimiter", delimiter)
-            [Token.new(TokenType::LiteralStringOther, match)]
+            [match.make_token(TokenType::LiteralStringOther)]
           }),
           LexerRule.new(METHOD_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
           LexerRule.new(FUNCTION_CALL, TokenType::NameFunction),
@@ -201,11 +201,11 @@ module Obelisk::Lexers
           LexerRule.new(PUNCTUATION, TokenType::Punctuation),
           LexerRule.new(RANGE_OPERATOR, TokenType::Operator),
           LexerRule.new(HASH_ROCKET, TokenType::Operator),
-          LexerRule.new(HEREDOC_START, ->(match : String, state : LexerState, groups : Array(String)) {
-            delimiter = groups[1]
+          LexerRule.new(HEREDOC_START, ->(match : LexerMatch, state : LexerState) {
+            delimiter = match.groups[1]
             state.push_state("heredoc")
             state.set_context("heredoc_delimiter", delimiter)
-            [Token.new(TokenType::LiteralStringHeredoc, match)]
+            [match.make_token(TokenType::LiteralStringHeredoc)]
           }),
         ],
 
@@ -283,25 +283,25 @@ module Obelisk::Lexers
         ],
 
         "percent_string_other" => [
-          LexerRule.new(/./, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/./, ->(match : LexerMatch, state : LexerState) {
             delimiter = state.get_context("delimiter")
-            if delimiter && match == delimiter
+            if delimiter && match.text == delimiter
               state.pop_state
-              [Token.new(TokenType::LiteralStringOther, match)]
+              [match.make_token(TokenType::LiteralStringOther)]
             else
-              [Token.new(TokenType::LiteralStringOther, match)]
+              [match.make_token(TokenType::LiteralStringOther)]
             end
           }),
         ],
 
         "heredoc" => [
-          LexerRule.new(/^(\s*)(\w+)$/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(/^(\s*)(\w+)$/, ->(match : LexerMatch, state : LexerState) {
             delimiter = state.get_context("heredoc_delimiter")
-            if delimiter && groups[1] == delimiter
+            if delimiter && match.groups[1] == delimiter
               state.pop_state
-              [Token.new(TokenType::LiteralStringHeredoc, match)]
+              [match.make_token(TokenType::LiteralStringHeredoc)]
             else
-              [Token.new(TokenType::LiteralStringHeredoc, match)]
+              [match.make_token(TokenType::LiteralStringHeredoc)]
             end
           }),
           LexerRule.new(/.+/, TokenType::LiteralStringHeredoc),
