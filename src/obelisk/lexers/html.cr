@@ -1,6 +1,71 @@
 require "../lexer"
 
 module Obelisk::Lexers
+  # ==========================================================================
+  # HTML Lexer Pattern Constants
+  # All patterns are defined as constants to avoid recompilation and enable reuse
+  # ==========================================================================
+  module HTMLPatterns
+    # Common patterns
+    WHITESPACE = /\s+/
+    DOCTYPE = /<!DOCTYPE[^>]+>/
+    COMMENT_START = /<!--/
+    COMMENT_END = /-->/
+    CDATA_START = /<!\[CDATA\[/
+    CDATA_END = /\]\]>/
+    PROCESSING_INSTRUCTION = /<\?.*?\?>/
+
+    # Tags
+    TAG_CLOSE = /<\/([a-zA-Z][a-zA-Z0-9:\-]*)(\s*)(>)/
+    TAG_OPEN = /<([a-zA-Z][a-zA-Z0-9:\-]*)/
+    TAG_END = />/
+    TAG_SELF_CLOSE = /\/>/
+
+    # HTML entities (used across multiple states)
+    ENTITY_NAMED = /[a-zA-Z]+;/
+    ENTITY_DECIMAL = /#\d+;/
+    ENTITY_HEXADECIMAL = /#x[0-9a-fA-F]+;/
+    ENTITY_PREFIX = /&/
+
+    # Attribute patterns
+    ATTR_NAME = /[a-zA-Z][a-zA-Z0-9:\-]*/
+    ATTR_NAME_WITH_VALUE = /([a-zA-Z][a-zA-Z0-9:\-]*)(\s*)(=)/
+    ATTR_UNQUOTED_VALUE = /[^\s>]+/
+    ATTR_DOUBLE_QUOTE = /"/
+    ATTR_SINGLE_QUOTE = /'/
+
+    # Content patterns
+    TEXT_CONTENT = /[^<&]+/
+    TEXT_SPECIAL = /[<&]/
+    COMMENT_CONTENT = /[^-]+/
+    COMMENT_HYPHENS = /-+(?!->)/
+    COMMENT_HYPHEN = /-/
+    CDATA_CONTENT = /[^\]]+/
+    CDATA_BRACKET = /\]/
+
+    # Attribute value content
+    ATTR_DOUBLE_CONTENT = /[^"&]+/
+    ATTR_DOUBLE_AMP = /[&]/
+    ATTR_SINGLE_CONTENT = /[^'&]+/
+    ATTR_SINGLE_AMP = /[&]/
+
+    # Analysis patterns
+    DOCTYPE_ANALYSIS = /<!DOCTYPE\s+html/i
+    HTML_TAG_OPEN = /<html[^>]*>/i
+    HEAD_TAG = /<head[^>]*>/i
+    BODY_TAG = /<body[^>]*>/i
+    META_TAG = /<meta[^>]*>/i
+    TITLE_TAG = /<title[^>]*>/i
+    COMMON_TAGS = /<(div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th)[^>]*>/i
+
+    # Region detector patterns
+    STYLE_TAG_START = /<style[^>]*>/i
+    STYLE_TAG_END = /<\/style\s*>/i
+    SCRIPT_TAG_START = /<script[^>]*>/i
+    SCRIPT_TAG_END = /<\/script\s*>/i
+    SCRIPT_SRC_ATTR = /\ssrc\s*=/
+  end
+
   # HTML language lexer with support for embedded CSS and JavaScript
   class HTML < DelegatingLexer
     @html_lexer : HTMLBase
@@ -29,6 +94,8 @@ module Obelisk::Lexers
 
   # Base HTML lexer (without embedded language support)
   class HTMLBase < RegexLexer
+    include HTMLPatterns
+
     def config : LexerConfig
       LexerConfig.new(
         name: "html",
@@ -46,18 +113,18 @@ module Obelisk::Lexers
       # HTML-specific patterns
       lines.each do |line|
         # Strong indicators
-        score += 0.3 if line =~ /<!DOCTYPE\s+html/i
-        score += 0.2 if line =~ /<html[^>]*>/i
-        score += 0.2 if line =~ /<head[^>]*>/i
-        score += 0.2 if line =~ /<body[^>]*>/i
-        score += 0.15 if line =~ /<meta[^>]*>/i
-        score += 0.15 if line =~ /<title[^>]*>/i
-        score += 0.1 if line =~ /<(div|span|p|a|img|h[1-6]|ul|ol|li|table|tr|td|th)[^>]*>/i
+        score += 0.3 if line =~ DOCTYPE_ANALYSIS
+        score += 0.2 if line =~ HTML_TAG_OPEN
+        score += 0.2 if line =~ HEAD_TAG
+        score += 0.2 if line =~ BODY_TAG
+        score += 0.15 if line =~ META_TAG
+        score += 0.15 if line =~ TITLE_TAG
+        score += 0.1 if line =~ COMMON_TAGS
 
         # HTML entities
-        score += 0.05 if line =~ /&[a-zA-Z]+;/
-        score += 0.05 if line =~ /&#\d+;/
-        score += 0.05 if line =~ /&#x[0-9a-fA-F]+;/
+        score += 0.05 if line =~ /&#{ENTITY_NAMED.source}/
+        score += 0.05 if line =~ /&#{ENTITY_DECIMAL.source}/
+        score += 0.05 if line =~ /&#{ENTITY_HEXADECIMAL.source}/
 
         # Comments
         score += 0.05 if line =~ /<!--.*-->/
@@ -75,114 +142,113 @@ module Obelisk::Lexers
       [score, 1.0f32].min
     end
 
+    # Helper to generate HTML entity rules (shared across states)
+    private def html_entity_rules : Array(LexerRule)
+      [
+        LexerRule.new(/&#{ENTITY_NAMED.source}/, TokenType::NameEntity),
+        LexerRule.new(/&#{ENTITY_DECIMAL.source}/, TokenType::NameEntity),
+        LexerRule.new(/&#{ENTITY_HEXADECIMAL.source}/, TokenType::NameEntity),
+      ]
+    end
+
     def rules : Hash(String, Array(LexerRule))
       {
         "root" => [
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
 
           # Doctype
-          LexerRule.new(/<!DOCTYPE[^>]+>/, TokenType::CommentPreproc),
+          LexerRule.new(DOCTYPE, TokenType::CommentPreproc),
 
           # Comments
-          LexerRule.new(/<!--/, RuleActions.push("comment", TokenType::CommentMultiline)),
+          LexerRule.new(COMMENT_START, RuleActions.push("comment", TokenType::CommentMultiline)),
 
           # CDATA sections
-          LexerRule.new(/<!\[CDATA\[/, RuleActions.push("cdata", TokenType::CommentPreproc)),
+          LexerRule.new(CDATA_START, RuleActions.push("cdata", TokenType::CommentPreproc)),
 
           # Processing instructions
-          LexerRule.new(/<\?.*?\?>/, TokenType::CommentPreproc),
+          LexerRule.new(PROCESSING_INSTRUCTION, TokenType::CommentPreproc),
 
           # Tags
-          LexerRule.new(/<\/([a-zA-Z][a-zA-Z0-9:\-]*)(\s*)(>)/,
+          LexerRule.new(TAG_CLOSE,
             RuleActions.by_groups(TokenType::NameTag, TokenType::Text, TokenType::Punctuation)),
 
           # Opening tags
-          LexerRule.new(/<([a-zA-Z][a-zA-Z0-9:\-]*)/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(TAG_OPEN, ->(match : String, state : LexerState, groups : Array(String)) {
             tag_name = groups[0].downcase
             state.set_context("current_tag", tag_name)
             state.push_state("tag")
             [Token.new(TokenType::NameTag, match)]
           }),
 
-          # HTML entities
-          LexerRule.new(/&[a-zA-Z]+;/, TokenType::NameEntity),
-          LexerRule.new(/&#\d+;/, TokenType::NameEntity),
-          LexerRule.new(/&#x[0-9a-fA-F]+;/, TokenType::NameEntity),
+          # HTML entities (using helper for consolidation)
+          *html_entity_rules,
 
           # Text content
-          LexerRule.new(/[^<&]+/, TokenType::Text),
-          LexerRule.new(/[<&]/, TokenType::Text),
+          LexerRule.new(TEXT_CONTENT, TokenType::Text),
+          LexerRule.new(TEXT_SPECIAL, TokenType::Text),
         ],
 
         "comment" => [
-          LexerRule.new(/-->/, RuleActions.pop(TokenType::CommentMultiline)),
-          LexerRule.new(/[^-]+/, TokenType::CommentMultiline),
-          LexerRule.new(/-+(?!->)/, TokenType::CommentMultiline),
-          LexerRule.new(/-/, TokenType::CommentMultiline),
+          LexerRule.new(COMMENT_END, RuleActions.pop(TokenType::CommentMultiline)),
+          LexerRule.new(COMMENT_CONTENT, TokenType::CommentMultiline),
+          LexerRule.new(COMMENT_HYPHENS, TokenType::CommentMultiline),
+          LexerRule.new(COMMENT_HYPHEN, TokenType::CommentMultiline),
         ],
 
         "cdata" => [
-          LexerRule.new(/\]\]>/, RuleActions.pop(TokenType::CommentPreproc)),
-          LexerRule.new(/[^\]]+/, TokenType::Text),
-          LexerRule.new(/\]/, TokenType::Text),
+          LexerRule.new(CDATA_END, RuleActions.pop(TokenType::CommentPreproc)),
+          LexerRule.new(CDATA_CONTENT, TokenType::Text),
+          LexerRule.new(CDATA_BRACKET, TokenType::Text),
         ],
 
         "tag" => [
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
 
           # End of tag
-          LexerRule.new(/>/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(TAG_END, ->(match : String, state : LexerState, groups : Array(String)) {
             state.clear_context
             state.pop_state
             [Token.new(TokenType::Punctuation, match)]
           }),
 
           # Self-closing tag
-          LexerRule.new(/\/>/, ->(match : String, state : LexerState, groups : Array(String)) {
+          LexerRule.new(TAG_SELF_CLOSE, ->(match : String, state : LexerState, groups : Array(String)) {
             state.clear_context
             state.pop_state
             [Token.new(TokenType::Punctuation, match)]
           }),
 
           # Attribute names
-          LexerRule.new(/([a-zA-Z][a-zA-Z0-9:\-]*)(\s*)(=)/,
+          LexerRule.new(ATTR_NAME_WITH_VALUE,
             RuleActions.by_groups(TokenType::NameAttribute, TokenType::Text, TokenType::Operator)),
 
           # Attribute without value
-          LexerRule.new(/[a-zA-Z][a-zA-Z0-9:\-]*/, TokenType::NameAttribute),
+          LexerRule.new(ATTR_NAME, TokenType::NameAttribute),
 
           # Attribute values
-          LexerRule.new(/"/, RuleActions.push("attr_double", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("attr_single", TokenType::LiteralStringSingle)),
+          LexerRule.new(ATTR_DOUBLE_QUOTE, RuleActions.push("attr_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(ATTR_SINGLE_QUOTE, RuleActions.push("attr_single", TokenType::LiteralStringSingle)),
 
           # Unquoted attribute values
-          LexerRule.new(/[^\s>]+/, TokenType::LiteralString),
+          LexerRule.new(ATTR_UNQUOTED_VALUE, TokenType::LiteralString),
         ],
 
         "attr_double" => [
-          LexerRule.new(/"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-
-          # HTML entities in attributes
-          LexerRule.new(/&[a-zA-Z]+;/, TokenType::NameEntity),
-          LexerRule.new(/&#\d+;/, TokenType::NameEntity),
-          LexerRule.new(/&#x[0-9a-fA-F]+;/, TokenType::NameEntity),
-
-          LexerRule.new(/[^"&]+/, TokenType::LiteralStringDouble),
-          LexerRule.new(/[&]/, TokenType::LiteralStringDouble),
+          LexerRule.new(ATTR_DOUBLE_QUOTE, RuleActions.pop(TokenType::LiteralStringDouble)),
+          # HTML entities in attributes (using helper for consolidation)
+          *html_entity_rules,
+          LexerRule.new(ATTR_DOUBLE_CONTENT, TokenType::LiteralStringDouble),
+          LexerRule.new(ATTR_DOUBLE_AMP, TokenType::LiteralStringDouble),
         ],
 
         "attr_single" => [
-          LexerRule.new(/'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-
-          # HTML entities in attributes
-          LexerRule.new(/&[a-zA-Z]+;/, TokenType::NameEntity),
-          LexerRule.new(/&#\d+;/, TokenType::NameEntity),
-          LexerRule.new(/&#x[0-9a-fA-F]+;/, TokenType::NameEntity),
-
-          LexerRule.new(/[^'&]+/, TokenType::LiteralStringSingle),
-          LexerRule.new(/[&]/, TokenType::LiteralStringSingle),
+          LexerRule.new(ATTR_SINGLE_QUOTE, RuleActions.pop(TokenType::LiteralStringSingle)),
+          # HTML entities in attributes (using helper for consolidation)
+          *html_entity_rules,
+          LexerRule.new(ATTR_SINGLE_CONTENT, TokenType::LiteralStringSingle),
+          LexerRule.new(ATTR_SINGLE_AMP, TokenType::LiteralStringSingle),
         ],
       }
     end
@@ -190,21 +256,20 @@ module Obelisk::Lexers
 
   # Detector for <style> tags with embedded CSS
   class StyleTagDetector < RegionDetector
+    include HTMLPatterns
+
     def detect_regions(text : String, state : LexerState) : Array(EmbeddedRegion)
       regions = [] of EmbeddedRegion
       pos = 0
 
-      # Find all <style> tags
-      style_regex = /<style[^>]*>/i
-      end_regex = /<\/style\s*>/i
-
+      # Find all <style> tags using compiled constants
       while pos < text.size
-        if match = style_regex.match(text, pos)
+        if match = STYLE_TAG_START.match(text, pos)
           start_tag_begin = match.begin(0)
           start_tag_end = match.end(0)
 
           # Find the closing tag
-          if end_match = end_regex.match(text, start_tag_end)
+          if end_match = STYLE_TAG_END.match(text, start_tag_end)
             end_tag_begin = end_match.begin(0)
             end_tag_end = end_match.end(0)
 
@@ -241,23 +306,22 @@ module Obelisk::Lexers
 
   # Detector for <script> tags with embedded JavaScript
   class ScriptTagDetector < RegionDetector
+    include HTMLPatterns
+
     def detect_regions(text : String, state : LexerState) : Array(EmbeddedRegion)
       regions = [] of EmbeddedRegion
       pos = 0
 
-      # Find all <script> tags
-      script_regex = /<script[^>]*>/i
-      end_regex = /<\/script\s*>/i
-
+      # Find all <script> tags using compiled constants
       while pos < text.size
-        if match = script_regex.match(text, pos)
+        if match = SCRIPT_TAG_START.match(text, pos)
           start_tag_begin = match.begin(0)
           start_tag_end = match.end(0)
 
           # Check if it's an external script (has src attribute)
-          if match[0] =~ /\ssrc\s*=/
+          if match[0] =~ SCRIPT_SRC_ATTR
             # External script, skip to closing tag
-            if end_match = end_regex.match(text, start_tag_end)
+            if end_match = SCRIPT_TAG_END.match(text, start_tag_end)
               pos = end_match.end(0)
             else
               break
@@ -266,7 +330,7 @@ module Obelisk::Lexers
           end
 
           # Find the closing tag
-          if end_match = end_regex.match(text, start_tag_end)
+          if end_match = SCRIPT_TAG_END.match(text, start_tag_end)
             end_tag_begin = end_match.begin(0)
             end_tag_end = end_match.end(0)
 

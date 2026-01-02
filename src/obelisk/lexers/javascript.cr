@@ -3,6 +3,103 @@ require "../lexer"
 module Obelisk::Lexers
   # JavaScript/TypeScript language lexer
   class JavaScript < RegexLexer
+    # ==========================================================================
+    # Regex Pattern Constants
+    # All patterns are defined as constants to avoid recompilation and enable reuse
+    # ==========================================================================
+
+    # Whitespace and comments
+    WHITESPACE = /\s+/
+    LINE_COMMENT = /\/\/.*?(?=\n|$)/
+    BLOCK_COMMENT_START = /\/\*/
+    BLOCK_COMMENT_END = /\*\//
+
+    # String delimiters
+    DOUBLE_QUOTE = /"/
+    SINGLE_QUOTE = /'/
+    BACKTICK = /`/
+
+    # Escape sequences (shared across string states)
+    ESCAPE_SEQUENCE = /\\[\\\"'nrtbfv]|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0-7]{1,3}|\\./
+
+    # String content patterns (excluding escape sequences and quotes)
+    STRING_DOUBLE_CONTENT = /[^"\\]+/
+    STRING_SINGLE_CONTENT = /[^'\\]+/
+    STRING_BACKTICK_CONTENT = /[^`\\$]+/
+
+    # Number literals
+    NUMBER_BIN = /0[bB][01]+(_[01]+)*n?/
+    NUMBER_OCT = /0[oO][0-7]+(_[0-7]+)*n?/
+    NUMBER_HEX = /0[xX][0-9a-fA-F]+(_[0-9a-fA-F]+)*n?/
+    NUMBER_FLOAT = /\d+\.\d*([eE][+-]?\d+)?/
+    NUMBER_FLOAT_LEADING = /\.\d+([eE][+-]?\d+)?/
+    NUMBER_EXP = /\d+[eE][+-]?\d+/
+    NUMBER_INT = /\d+(_\d+)*n?/
+
+    # Keywords
+    KEYWORDS = /\b(?:break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|function|if|import|in|instanceof|let|new|return|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/
+
+    # TypeScript keywords
+    TYPESCRIPT_KEYWORDS = /\b(?:abstract|as|async|await|constructor|declare|enum|from|get|implements|interface|is|keyof|module|namespace|never|private|protected|public|readonly|require|set|static|type|of)\b/
+
+    # Reserved words
+    RESERVED_WORDS = /\b(?:arguments|eval)\b/
+
+    # Constants
+    CONSTANTS = /\b(?:true|false|null|undefined|Infinity|NaN)\b/
+
+    # Built-in objects
+    BUILTIN_OBJECTS = /\b(?:Array|ArrayBuffer|BigInt|BigInt64Array|BigUint64Array|Boolean|DataView|Date|Error|EvalError|Float32Array|Float64Array|Function|Generator|GeneratorFunction|Int8Array|Int16Array|Int32Array|Map|Number|Object|Promise|Proxy|RangeError|ReferenceError|Reflect|RegExp|Set|SharedArrayBuffer|String|Symbol|SyntaxError|TypeError|URIError|Uint8Array|Uint8ClampedArray|Uint16Array|Uint32Array|WeakMap|WeakSet)\b/
+
+    # Global functions
+    GLOBAL_FUNCTIONS = /\b(?:decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval|isFinite|isNaN|parseFloat|parseInt|unescape)\b/
+
+    # Console
+    CONSOLE = /\bconsole\b/
+
+    # Regular expression literal (simplified - real JS regex detection is context-sensitive)
+    REGEX_LITERAL = /\/(?:[^\/\\\n]|\\.)+\/[gimsuvy]*/
+
+    # JSX/TSX tags
+    JSX_OPEN_TAG = /<([A-Z][a-zA-Z0-9_]*)/
+    JSX_CLOSE_TAG = /<\/([A-Z][a-zA-Z0-9_]*)>/
+
+    # Type annotations
+    TYPE_ANNOTATION = /:\s*([a-zA-Z_]\w*)/
+
+    # Class names
+    CLASS_NAME = /\b[A-Z][a-zA-Z0-9_]*\b/
+
+    # Function definitions
+    FUNCTION_DEF = /\b(function)(\s+)([a-zA-Z_]\w*)/
+    ASYNC_FUNCTION_DEF = /\b(async)(\s+)(function)(\s+)([a-zA-Z_]\w*)/
+
+    # Arrow functions
+    ARROW_FUNCTION = /([a-zA-Z_]\w*)(\s*)(=>)/
+    ARROW_OPERATOR = /=>/
+
+    # Method calls and property access
+    PROPERTY_ACCESS = /\.([a-zA-Z_]\w*)/
+
+    # Function calls
+    FUNCTION_CALL = /[a-zA-Z_$][\w$]*(?=\s*\()/
+
+    # Identifiers
+    IDENTIFIER = /[a-zA-Z_$][\w$]*/
+
+    # Operators
+    OPERATORS = /\+\+|--|&&|\|\||<<|>>>?|[+\-*\/%<>=!&|^~]+/
+    TERNARY = /[?:]/
+    SPREAD = /\.\.\./
+
+    # Punctuation
+    PUNCTUATION = /[.,;()\[\]{}]/
+
+    # Template literal interpolation
+    INTERPOLATION_START = /\$\{/
+    INTERPOLATION_END = /\}/
+    LONE_DOLLAR = /\$/
+
     def config : LexerConfig
       LexerConfig.new(
         name: "javascript",
@@ -56,125 +153,110 @@ module Obelisk::Lexers
       {
         "root" => [
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
 
           # Comments
-          LexerRule.new(/\/\/.*?(?=\n|$)/, TokenType::CommentSingle),
-          LexerRule.new(/\/\*/, RuleActions.push("multiline_comment", TokenType::CommentMultiline)),
+          LexerRule.new(LINE_COMMENT, TokenType::CommentSingle),
+          LexerRule.new(BLOCK_COMMENT_START, RuleActions.push("multiline_comment", TokenType::CommentMultiline)),
 
           # Keywords
-          LexerRule.new(/\b(?:break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|function|if|import|in|instanceof|let|new|return|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/, TokenType::Keyword),
+          LexerRule.new(KEYWORDS, TokenType::Keyword),
 
           # TypeScript keywords
-          LexerRule.new(/\b(?:abstract|as|async|await|constructor|declare|enum|from|get|implements|interface|is|keyof|module|namespace|never|private|protected|public|readonly|require|set|static|type|of)\b/, TokenType::Keyword),
+          LexerRule.new(TYPESCRIPT_KEYWORDS, TokenType::Keyword),
 
           # Reserved words
-          LexerRule.new(/\b(?:arguments|eval)\b/, TokenType::KeywordReserved),
+          LexerRule.new(RESERVED_WORDS, TokenType::KeywordReserved),
 
           # Constants
-          LexerRule.new(/\b(?:true|false|null|undefined|Infinity|NaN)\b/, TokenType::KeywordConstant),
+          LexerRule.new(CONSTANTS, TokenType::KeywordConstant),
 
           # Built-in objects
-          LexerRule.new(/\b(?:Array|ArrayBuffer|BigInt|BigInt64Array|BigUint64Array|Boolean|DataView|Date|Error|EvalError|Float32Array|Float64Array|Function|Generator|GeneratorFunction|Int8Array|Int16Array|Int32Array|Map|Number|Object|Promise|Proxy|RangeError|ReferenceError|Reflect|RegExp|Set|SharedArrayBuffer|String|Symbol|SyntaxError|TypeError|URIError|Uint8Array|Uint8ClampedArray|Uint16Array|Uint32Array|WeakMap|WeakSet)\b/, TokenType::NameBuiltin),
+          LexerRule.new(BUILTIN_OBJECTS, TokenType::NameBuiltin),
 
           # Global functions
-          LexerRule.new(/\b(?:decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval|isFinite|isNaN|parseFloat|parseInt|unescape)\b/, TokenType::NameBuiltin),
+          LexerRule.new(GLOBAL_FUNCTIONS, TokenType::NameBuiltin),
 
           # Console object
-          LexerRule.new(/\bconsole\b/, TokenType::NameBuiltin),
+          LexerRule.new(CONSOLE, TokenType::NameBuiltin),
 
           # Numbers
-          LexerRule.new(/0[bB][01]+(_[01]+)*n?/, TokenType::LiteralNumberBin),
-          LexerRule.new(/0[oO][0-7]+(_[0-7]+)*n?/, TokenType::LiteralNumberOct),
-          LexerRule.new(/0[xX][0-9a-fA-F]+(_[0-9a-fA-F]+)*n?/, TokenType::LiteralNumberHex),
-          LexerRule.new(/\d+\.\d*([eE][+-]?\d+)?/, TokenType::LiteralNumberFloat),
-          LexerRule.new(/\.\d+([eE][+-]?\d+)?/, TokenType::LiteralNumberFloat),
-          LexerRule.new(/\d+[eE][+-]?\d+/, TokenType::LiteralNumberFloat),
-          LexerRule.new(/\d+(_\d+)*n?/, TokenType::LiteralNumberInteger),
+          LexerRule.new(NUMBER_BIN, TokenType::LiteralNumberBin),
+          LexerRule.new(NUMBER_OCT, TokenType::LiteralNumberOct),
+          LexerRule.new(NUMBER_HEX, TokenType::LiteralNumberHex),
+          LexerRule.new(NUMBER_FLOAT, TokenType::LiteralNumberFloat),
+          LexerRule.new(NUMBER_FLOAT_LEADING, TokenType::LiteralNumberFloat),
+          LexerRule.new(NUMBER_EXP, TokenType::LiteralNumberFloat),
+          LexerRule.new(NUMBER_INT, TokenType::LiteralNumberInteger),
 
           # Strings
-          LexerRule.new(/"/, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
-          LexerRule.new(/`/, RuleActions.push("template_string", TokenType::LiteralStringBacktick)),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
+          LexerRule.new(BACKTICK, RuleActions.push("template_string", TokenType::LiteralStringBacktick)),
 
-          # Regular expressions
-          # This is simplified - real JS regex detection is context-sensitive
-          LexerRule.new(/\/(?:[^\/\\\n]|\\.)+\/[gimsuvy]*/, TokenType::LiteralStringRegex),
+          # Regular expressions (simplified - real JS regex detection is context-sensitive)
+          LexerRule.new(REGEX_LITERAL, TokenType::LiteralStringRegex),
 
           # JSX/TSX tags
-          LexerRule.new(/<([A-Z][a-zA-Z0-9_]*)/, RuleActions.by_groups(TokenType::NameTag)),
-          LexerRule.new(/<\/([A-Z][a-zA-Z0-9_]*)>/, RuleActions.by_groups(TokenType::NameTag)),
+          LexerRule.new(JSX_OPEN_TAG, RuleActions.by_groups(TokenType::NameTag)),
+          LexerRule.new(JSX_CLOSE_TAG, RuleActions.by_groups(TokenType::NameTag)),
 
           # Type annotations (TypeScript)
-          LexerRule.new(/:\s*([a-zA-Z_]\w*)/, RuleActions.by_groups(TokenType::KeywordType)),
+          LexerRule.new(TYPE_ANNOTATION, RuleActions.by_groups(TokenType::KeywordType)),
 
           # Class names
-          LexerRule.new(/\b[A-Z][a-zA-Z0-9_]*\b/, TokenType::NameClass),
+          LexerRule.new(CLASS_NAME, TokenType::NameClass),
 
           # Function/method definitions
-          LexerRule.new(/\b(function)(\s+)([a-zA-Z_]\w*)/, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
-          LexerRule.new(/\b(async)(\s+)(function)(\s+)([a-zA-Z_]\w*)/, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
+          LexerRule.new(FUNCTION_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
+          LexerRule.new(ASYNC_FUNCTION_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
 
           # Arrow functions
-          LexerRule.new(/([a-zA-Z_]\w*)(\s*)(=>)/, RuleActions.by_groups(TokenType::Name, TokenType::Text, TokenType::Operator)),
+          LexerRule.new(ARROW_FUNCTION, RuleActions.by_groups(TokenType::Name, TokenType::Text, TokenType::Operator)),
 
           # Method calls and property access
-          LexerRule.new(/\.([a-zA-Z_]\w*)/, RuleActions.by_groups(TokenType::NameAttribute)),
+          LexerRule.new(PROPERTY_ACCESS, RuleActions.by_groups(TokenType::NameAttribute)),
 
           # Function calls and names
-          LexerRule.new(/[a-zA-Z_$][\w$]*(?=\s*\()/, TokenType::NameFunction),
-          LexerRule.new(/[a-zA-Z_$][\w$]*/, TokenType::Name),
+          LexerRule.new(FUNCTION_CALL, TokenType::NameFunction),
+          LexerRule.new(IDENTIFIER, TokenType::Name),
 
           # Operators
-          LexerRule.new(/\+\+|--|&&|\|\||<<|>>>?|[+\-*\/%<>=!&|^~]+/, TokenType::Operator),
-          LexerRule.new(/[?:]/, TokenType::Operator),   # Ternary
-          LexerRule.new(/\.\.\./, TokenType::Operator), # Spread
-          LexerRule.new(/=>/, TokenType::Operator),     # Arrow
-          LexerRule.new(/[.,;()\[\]{}]/, TokenType::Punctuation),
+          LexerRule.new(OPERATORS, TokenType::Operator),
+          LexerRule.new(TERNARY, TokenType::Operator),
+          LexerRule.new(SPREAD, TokenType::Operator),
+          LexerRule.new(ARROW_OPERATOR, TokenType::Operator),
+          LexerRule.new(PUNCTUATION, TokenType::Punctuation),
         ],
 
         "multiline_comment" => [
-          LexerRule.new(/\*\//, RuleActions.pop(TokenType::CommentMultiline)),
+          LexerRule.new(BLOCK_COMMENT_END, RuleActions.pop(TokenType::CommentMultiline)),
           LexerRule.new(/[^*]+/, TokenType::CommentMultiline),
           LexerRule.new(/\*/, TokenType::CommentMultiline),
         ],
 
         "string_double" => [
-          LexerRule.new(/"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-          LexerRule.new(/\\[\\\"'nrtbfv]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\x[0-9a-fA-F]{2}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u[0-9a-fA-F]{4}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u\{[0-9a-fA-F]+\}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\[0-7]{1,3}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^"\\]+/, TokenType::LiteralStringDouble),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.pop(TokenType::LiteralStringDouble)),
+          LexerRule.new(ESCAPE_SEQUENCE, TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_DOUBLE_CONTENT, TokenType::LiteralStringDouble),
         ],
 
         "string_single" => [
-          LexerRule.new(/'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-          LexerRule.new(/\\[\\\'nrtbfv]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\x[0-9a-fA-F]{2}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u[0-9a-fA-F]{4}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u\{[0-9a-fA-F]+\}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\[0-7]{1,3}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^'\\]+/, TokenType::LiteralStringSingle),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.pop(TokenType::LiteralStringSingle)),
+          LexerRule.new(ESCAPE_SEQUENCE, TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_SINGLE_CONTENT, TokenType::LiteralStringSingle),
         ],
 
         "template_string" => [
-          LexerRule.new(/`/, RuleActions.pop(TokenType::LiteralStringBacktick)),
-          LexerRule.new(/\\[\\`nrtbfv]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\x[0-9a-fA-F]{2}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u[0-9a-fA-F]{4}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u\{[0-9a-fA-F]+\}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/\$\{/, RuleActions.push("template_interpolation", TokenType::LiteralStringInterpol)),
-          LexerRule.new(/[^`\\$]+/, TokenType::LiteralStringBacktick),
-          LexerRule.new(/\$/, TokenType::LiteralStringBacktick),
+          LexerRule.new(BACKTICK, RuleActions.pop(TokenType::LiteralStringBacktick)),
+          LexerRule.new(ESCAPE_SEQUENCE, TokenType::LiteralStringEscape),
+          LexerRule.new(INTERPOLATION_START, RuleActions.push("template_interpolation", TokenType::LiteralStringInterpol)),
+          LexerRule.new(STRING_BACKTICK_CONTENT, TokenType::LiteralStringBacktick),
+          LexerRule.new(LONE_DOLLAR, TokenType::LiteralStringBacktick),
         ],
 
         "template_interpolation" => [
-          LexerRule.new(/\}/, RuleActions.pop(TokenType::LiteralStringInterpol)),
+          LexerRule.new(INTERPOLATION_END, RuleActions.pop(TokenType::LiteralStringInterpol)),
           # Simplified - in reality we'd recursively parse JavaScript expressions
           LexerRule.new(/[^}]+/, TokenType::Text),
         ],
