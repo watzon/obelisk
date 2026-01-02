@@ -4,12 +4,26 @@ This document tracks our progress implementing lexers to match the comprehensive
 
 ## Current Status
 
-- [x] **Crystal** *(Implemented)* - `.cr` - *Native Crystal syntax support*
-- [x] **JSON** *(Implemented)* - `.json` - *Complete JSON syntax*
-- [x] **YAML** *(Implemented)* - `.yml`, `.yaml` - *YAML syntax with documents, anchors, tags*
-- [x] **Plain Text** *(Implemented)* - *Fallback lexer*
+### Implemented Languages (15/281)
 
-**Total Progress: 4/281 lexers (1.4%)**
+- [x] **Bash** *(Implemented)* - `.sh`, `.bash` - *Shell scripting with heredocs*
+- [x] **C** *(Implemented)* - `.c`, `.h` - *C/C++ with preprocessor, raw strings*
+- [x] **CSS** *(Implemented)* - `.css` - *CSS syntax with selectors, properties*
+- [x] **Crystal** *(Implemented)* - `.cr` - *Native Crystal syntax support*
+- [x] **Go** *(Implemented)* - `.go` - *Go syntax with raw strings, macros*
+- [x] **HTML** *(Implemented)* - `.html`, `.htm` - *HTML with embedded CSS/JS*
+- [x] **JavaScript** *(Implemented)* - `.js`, `.jsx`, `.ts`, `.tsx` - *JS/TypeScript syntax*
+- [x] **JSON** *(Implemented)* - `.json` - *Complete JSON syntax*
+- [x] **Markdown** *(Implemented)* - `.md`, `.markdown` - *CommonMark syntax*
+- [x] **Plain Text** *(Implemented)* - *Fallback lexer*
+- [x] **Python** *(Implemented)* - `.py`, `.pyw`, `.pyi` - *Python 3 syntax*
+- [x] **Ruby** *(Implemented)* - `.rb` - *Ruby syntax with heredocs, % strings*
+- [x] **Rust** *(Implemented)* - `.rs` - *Rust with raw strings, macros*
+- [x] **Shell** *(Implemented)* - `.sh`, `.bash` - *Bash with heredocs, command substitution*
+- [x] **SQL** *(Implemented)* - `.sql` - *SQL syntax*
+- [x] **YAML** *(Implemented)* - `.yml`, `.yaml` - *YAML syntax with documents, anchors, tags*
+
+**Total Progress: 15/281 lexers (5.3%)**
 
 ---
 
@@ -38,9 +52,9 @@ This document tracks our progress implementing lexers to match the comprehensive
 - [ ] **Brainfuck** *(XML-defined)* - `.bf`
 
 ### **C**
-- [ ] **C** *(XML-defined)* - `.c`, `.h`
+- [x] **C** *(Implemented)* - `.c`, `.h`
 - [ ] **C#** *(XML-defined)* - `.cs`
-- [ ] **C++** *(XML-defined)* - `.cpp`, `.cc`, `.cxx`, `.hpp`
+- [x] **C++** *(Implemented)* - `.cpp`, `.cc`, `.cxx`, `.hpp`
 - [ ] **Ceylon** *(XML-defined)* - `.ceylon`
 - [ ] **ChaiScript** *(XML-defined)* - `.chai`
 - [ ] **Chapel** *(XML-defined)* - `.chpl`
@@ -76,9 +90,9 @@ This document tracks our progress implementing lexers to match the comprehensive
 - [ ] **GDScript** *(XML-defined)* - `.gd`
 - [ ] **Gleam** *(XML-defined)* - `.gleam`
 - [ ] **GLSL** *(XML-defined)* - `.glsl`, `.vert`, `.frag`
-- [ ] **Go** *(Go-defined)* - `.go` - *Custom lexer with Go template support*
-- [ ] **Go HTML Template** *(Go-defined)* - *Delegating lexer combining HTML + Go templates*
-- [ ] **Go Text Template** *(Go-defined)* - *Go template syntax*
+- [x] **Go** *(Implemented)* - `.go`
+- [ ] **Go HTML Template** *(Go-defined)*
+- [ ] **Go Text Template** *(Go-defined)*
 - [ ] **GraphQL** *(XML-defined)* - `.graphql`
 - [ ] **Groovy** *(XML-defined)* - `.groovy`
 
@@ -98,7 +112,7 @@ This document tracks our progress implementing lexers to match the comprehensive
 ### **J**
 - [ ] **J** *(XML-defined)* - `.ijs`
 - [ ] **Java** *(XML-defined)* - `.java`
-- [ ] **JavaScript** *(XML-defined)* - `.js`
+- [x] **JavaScript** *(Implemented)* - `.js`, `.jsx`, `.ts`, `.tsx`
 - [ ] **Jsonnet** *(XML-defined)* - `.jsonnet`
 - [ ] **Julia** *(XML-defined)* - `.jl`
 - [ ] **Jungle** *(XML-defined)*
@@ -152,7 +166,7 @@ This document tracks our progress implementing lexers to match the comprehensive
 - [ ] **PRQL** *(XML-defined)* - `.prql`
 - [ ] **PSL** *(XML-defined)*
 - [ ] **Puppet** *(XML-defined)* - `.pp`
-- [ ] **Python** *(XML-defined)* - `.py`, `.pyw`, `.pyi`
+- [x] **Python** *(Implemented)* - `.py`, `.pyw`, `.pyi`
 - [ ] **Python 2** *(XML-defined)* - `.py`
 
 ### **Q**
@@ -168,8 +182,8 @@ This document tracks our progress implementing lexers to match the comprehensive
 - [ ] **ReasonML** *(XML-defined)* - `.re`
 - [ ] **Rego** *(XML-defined)* - `.rego`
 - [ ] **Rexx** *(XML-defined)* - `.rexx`
-- [ ] **Ruby** *(XML-defined)* - `.rb`
-- [ ] **Rust** *(XML-defined)* - `.rs`
+- [x] **Ruby** *(Implemented)* - `.rb`
+- [x] **Rust** *(Implemented)* - `.rs`
 
 ### **S**
 - [ ] **SAS** *(XML-defined)* - `.sas`
@@ -305,7 +319,7 @@ This document tracks our progress implementing lexers to match the comprehensive
 - [ ] **PostgreSQL SQL dialect** *(XML-defined)* - `.sql`
 - [ ] **PromQL** *(XML-defined)*
 - [ ] **SPARQL** *(XML-defined)* - `.sparql`
-- [ ] **SQL** *(XML-defined)* - `.sql`
+- [x] **SQL** *(Implemented)* - `.sql`
 - [ ] **Transact-SQL** *(XML-defined)* - `.sql`
 
 ## Network & Protocol Languages

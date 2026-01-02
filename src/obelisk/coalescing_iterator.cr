@@ -16,8 +16,6 @@ module Obelisk
   # 4. next() is called on the wrapper
   #
   # Workaround: Use SafeTokenIteratorAdapter directly (already done by default)
-  #
-  # TODO: File bug report with Crystal team and re-enable when fixed
   class CoalescingIterator
     include Iterator(Token)
 
@@ -95,9 +93,12 @@ module Obelisk
     # Default max_size of 4KB prevents unbounded growth while still
     # providing significant performance benefits for typical code
     #
-    # NOTE: Currently disabled (returns source unchanged) due to Crystal compiler bug
+    # NOTE: Currently disabled due to a possible Crystal compiler bug. To enable coalescing
+    # for testing/debugging, comment out the `source` line and uncomment the
+    # `CoalescingIterator.new` line below.
     def self.wrap(source : TokenIterator, max_size : Int32? = 4096) : TokenIterator
-      source  # Disabled - returns source unchanged
+      source # CURRENT: Return source unchanged (coalescing disabled)
+      # CoalescingIterator.new(source, max_size) # ENABLED: Use coalescing iterator
     end
   end
 end
