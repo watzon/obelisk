@@ -3,6 +3,21 @@ require "./token"
 module Obelisk
   # Iterator that coalesces consecutive tokens of the same type
   # This improves performance by reducing the number of token objects
+  #
+  # NOTE: This iterator is currently DISABLED due to a Crystal compiler bug.
+  # When SafeTokenIteratorAdapter instances created via lexer.tokenize() on
+  # lexers stored in the Registry Hash are wrapped in CoalescingIterator,
+  # calling next() causes an EXC_BREAKPOINT crash.
+  #
+  # The bug only occurs when:
+  # 1. Lexer is stored in a Hash (like the Registry)
+  # 2. SafeTokenIteratorAdapter is created via lexer.tokenize() method
+  # 3. The iterator is wrapped in another iterator (like CoalescingIterator)
+  # 4. next() is called on the wrapper
+  #
+  # Workaround: Use SafeTokenIteratorAdapter directly (already done by default)
+  #
+  # TODO: File bug report with Crystal team and re-enable when fixed
   class CoalescingIterator
     include Iterator(Token)
 
@@ -79,9 +94,10 @@ module Obelisk
     # Static helper to wrap any iterator with coalescing
     # Default max_size of 4KB prevents unbounded growth while still
     # providing significant performance benefits for typical code
-    # NOTE: Currently disabled due to memory corruption issues that need investigation
+    #
+    # NOTE: Currently disabled (returns source unchanged) due to Crystal compiler bug
     def self.wrap(source : TokenIterator, max_size : Int32? = 4096) : TokenIterator
-      source
+      source  # Disabled - returns source unchanged
     end
   end
 end

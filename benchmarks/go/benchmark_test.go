@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -80,7 +81,7 @@ func BenchmarkHighlight(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				quick.Highlight(nil, file.Source, file.Language, "html", "github")
+				quick.Highlight(io.Discard, file.Source, file.Language, "html", "github")
 			}
 		})
 	}
@@ -104,7 +105,7 @@ func BenchmarkLatency(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				iter, _ := lexer.Tokenise(nil, file.Source)
-				iter.Next()
+				iter()  // Iterator is a function type
 			}
 		})
 	}
