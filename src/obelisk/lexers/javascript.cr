@@ -81,7 +81,7 @@ module Obelisk::Lexers
     # Method calls and property access
     PROPERTY_ACCESS = /\.([a-zA-Z_]\w*)/
 
-    # Function calls
+    # Function calls (with lookahead - note: expensive but required for functionality)
     FUNCTION_CALL = /[a-zA-Z_$][\w$]*(?=\s*\()/
 
     # Identifiers
@@ -172,9 +172,11 @@ module Obelisk::Lexers
           LexerRule.new(CONSTANTS, TokenType::KeywordConstant),
 
           # Built-in objects
+          # NOTE: Large alternations like this contribute to slow performance
           LexerRule.new(BUILTIN_OBJECTS, TokenType::NameBuiltin),
 
           # Global functions
+          # NOTE: Large alternations like this contribute to slow performance
           LexerRule.new(GLOBAL_FUNCTIONS, TokenType::NameBuiltin),
 
           # Console object
@@ -217,7 +219,7 @@ module Obelisk::Lexers
           # Method calls and property access
           LexerRule.new(PROPERTY_ACCESS, RuleActions.by_groups(TokenType::NameAttribute)),
 
-          # Function calls and names
+          # Function calls
           LexerRule.new(FUNCTION_CALL, TokenType::NameFunction),
           LexerRule.new(IDENTIFIER, TokenType::Name),
 

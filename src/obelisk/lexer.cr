@@ -376,11 +376,24 @@ module Obelisk
     private def try_rules_for_state(state_name : String, remaining : String) : {LexerRule, Regex::MatchData}?
       current_rules = state_rules(state_name)
 
+      # Optimization: Only match against a small prefix of remaining text.
+      # Most tokens are short (<50 chars), so scanning the entire remaining file is wasteful.
+      # For longer tokens (strings, comments), we'll rematch against the full text.
+      max_prefix = 100
+
+      search_text = remaining.size > max_prefix ? remaining[0...max_prefix] : remaining
+      was_truncated = search_text.size != remaining.size
+
       current_rules.each do |rule|
-        if match = rule.match(remaining, 0)
+        if match = rule.match(search_text, 0)
           # Only accept matches that start at position 0
           if match.begin(0) == 0
-            return {rule, match}
+            # If we found a match at the end of the truncated prefix,
+            # the real token might be longer - rematch against full text
+            if was_truncated && match[0].size >= max_prefix - 5
+              match = rule.match(remaining, 0)
+            end
+            return {rule, match} if match
           end
         end
       end
@@ -626,6 +639,7 @@ module Obelisk
 
   # Safe adapter to work around Crystal bug #14317 with RegexTokenIterator
   # This pre-fetches tokens to avoid memory corruption when iterating
+  # TODO: Replace with lazy streaming when Crystal type system allows
   class SafeTokenIteratorAdapter
     include Iterator(Token)
 
@@ -683,7 +697,7 @@ module Obelisk
       rescue ex
         # If initialization fails, create a fallback segment
         @segments = [{
-          iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
+          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
           delimiter: nil.as(Token?),
         }]
         @finished = false # We still have one segment to process
@@ -755,9 +769,9 @@ module Obelisk
             begin
               base_content = @text[last_pos...region.start_pos]
               unless base_content.empty?
-                # Use safe adapter for all lexers to avoid Crystal bug #14317
+                # Safe adapter for all lexers to avoid Crystal bug #14317
                 segments << {
-                  iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, base_content).as(TokenIterator),
+                  iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, base_content).as(TokenIterator),
                   delimiter: nil.as(Token?),
                 }
               end
@@ -770,7 +784,7 @@ module Obelisk
           if start_token = region.start_token
             begin
               segments << {
-                iterator:  SingleTokenIterator.new(start_token).as(TokenIterator),
+                iterator: SingleTokenIterator.new(start_token).as(TokenIterator),
                 delimiter: nil.as(Token?),
               }
             rescue
@@ -782,9 +796,9 @@ module Obelisk
           begin
             content = region.content(@text)
             unless content.empty?
-              # Use safe adapter for all lexers to avoid Crystal bug #14317
+              # Safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator:  SafeTokenIteratorAdapter.new(region.lexer, content).as(TokenIterator),
+                iterator: SafeTokenIteratorAdapter.new(region.lexer, content).as(TokenIterator),
                 delimiter: nil.as(Token?),
               }
             end
@@ -796,7 +810,7 @@ module Obelisk
           if end_token = region.end_token
             begin
               segments << {
-                iterator:  SingleTokenIterator.new(end_token).as(TokenIterator),
+                iterator: SingleTokenIterator.new(end_token).as(TokenIterator),
                 delimiter: nil.as(Token?),
               }
             rescue
@@ -812,9 +826,9 @@ module Obelisk
           begin
             remaining_content = @text[last_pos..]
             unless remaining_content.empty?
-              # Use safe adapter for all lexers to avoid Crystal bug #14317
+              # Safe adapter for all lexers to avoid Crystal bug #14317
               segments << {
-                iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, remaining_content).as(TokenIterator),
+                iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, remaining_content).as(TokenIterator),
                 delimiter: nil.as(Token?),
               }
             end
@@ -825,7 +839,7 @@ module Obelisk
       rescue
         # If any major error occurs, create a fallback segment with the entire text
         segments = [{
-          iterator:  SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
+          iterator: SafeTokenIteratorAdapter.new(@lexer.base_lexer, @text).as(TokenIterator),
           delimiter: nil.as(Token?),
         }]
       end

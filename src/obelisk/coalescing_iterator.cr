@@ -79,7 +79,7 @@ module Obelisk
 
         # Coalesce all tokens in buffer
         if @buffer.size == 1
-          return @buffer.shift
+          @buffer.shift
         else
           coalesced_value = String.build do |str|
             @buffer.each { |t| str << t.value }
@@ -98,7 +98,8 @@ module Obelisk
     # Default max_size of 4KB prevents unbounded growth while still
     # providing significant performance benefits for typical code
     def self.wrap(source : TokenIterator, max_size : Int32? = 4096) : TokenIterator
-      CoalescingIterator.new(source, max_size)
+      # Temporarily disabled for debugging
+      source
     end
   end
 end
