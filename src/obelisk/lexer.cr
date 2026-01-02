@@ -33,6 +33,14 @@ module Obelisk
     abstract def config : LexerConfig
     abstract def tokenize(text : String) : TokenIterator
 
+    # Create the raw token iterator without safety wrappers.
+    # This is used internally by SafeTokenIteratorAdapter to avoid infinite recursion.
+    # Default implementation just calls tokenize, but RegexLexer overrides this
+    # to return the raw RegexTokenIterator (which has memory corruption issues).
+    def tokenize_unsafe(text : String) : TokenIterator
+      tokenize(text)
+    end
+
     # Analyze text to determine if this lexer can handle it
     # Returns a score from 0.0 to 1.0
     def analyze(text : String) : Float32
@@ -334,6 +342,15 @@ module Obelisk
     abstract def rules : Hash(String, Array(LexerRule))
 
     def tokenize(text : String) : TokenIterator
+      # Use SafeTokenIteratorAdapter to avoid Crystal bug #14317 with RegexTokenIterator
+      # which causes memory corruption when the iterator is consumed multiple times
+      SafeTokenIteratorAdapter.new(self, text)
+    end
+
+    # Create the raw (unsafe) token iterator - only for internal use
+    # This returns RegexTokenIterator directly which has memory corruption issues
+    # when consumed multiple times (Crystal bug #14317)
+    protected def tokenize_unsafe(text : String) : TokenIterator
       RegexTokenIterator.new(self, text)
     end
 
@@ -648,8 +665,9 @@ module Obelisk
       @index = 0
 
       # Pre-fetch all tokens to avoid iterator issues
+      # Use tokenize_unsafe to get the raw iterator without infinite recursion
       begin
-        iter = lexer.tokenize(text)
+        iter = lexer.tokenize_unsafe(text)
         # Limit to prevent infinite loops
         10000.times do
           case token = iter.next

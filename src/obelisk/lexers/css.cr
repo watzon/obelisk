@@ -2,7 +2,79 @@ require "../lexer"
 
 module Obelisk::Lexers
   # CSS language lexer
+  # Optimized for performance using Chroma-like simple patterns
   class CSS < RegexLexer
+    # ==========================================================================
+    # Regex Pattern Constants
+    # ==========================================================================
+
+    # Whitespace and comments
+    WHITESPACE = /\s+/
+    COMMENT_START = /\/\*/
+    COMMENT_END = /\*\//
+
+    # String delimiters
+    DOUBLE_QUOTE = /"/
+    SINGLE_QUOTE = /'/
+
+    # Escape sequences (shared across string states)
+    ESCAPE_SEQUENCE = /\\[\\"]|\\./
+
+    # String content patterns
+    STRING_DOUBLE_CONTENT = /[^"\\]+/
+    STRING_SINGLE_CONTENT = /[^'\\]+/
+
+    # At-rules
+    AT_RULES = /@(charset|namespace|import|font-face|page|media|keyframes|supports|document|viewport|font-feature-values|counter-style|layer|container|scope|starting-style)\b/
+
+    # Selectors
+    ID_SELECTOR = /#[a-zA-Z][\w-]*/
+    CLASS_SELECTOR = /\.[a-zA-Z][\w-]*/
+    PSEUDO_SELECTOR = /::?[a-zA-Z-]+(?:\([^)]*\))?/
+    TAG_SELECTOR = /[a-zA-Z][\w-]*/
+    UNIVERSAL_SELECTOR = /\*/
+
+    # Combinators
+    COMBINATORS = /[>+~]/
+
+    # Punctuation
+    PUNCTUATION = /[;,(){}\[\]]/
+    COMMA = /,/
+
+    # Property names
+    PROPERTY_NAME = /[a-zA-Z-]+/
+
+    # Property values
+    IMPORTANT_FLAG = /!\s*important\b/
+    URL_FUNCTION = /url\(/
+
+    # Functions
+    FUNCTION_NAME = /[a-zA-Z-]+(?=\()/
+
+    # Color functions (matched in root, before generic functions)
+    COLOR_FUNCTION_CALL = /\b(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\(/
+
+    # Numbers (simplified - unit is handled separately)
+    NUMBER = /-?\d+\.?\d*/
+
+    # Units
+    UNIT = /(?:px|em|rem|%|vh|vw|pt|cm|mm|in|pc|ex|ch|vmin|vmax|fr|deg|rad|grad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?\b/
+
+    # Colors
+    HEX_COLOR = /#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/
+
+    # Simplified color keywords (most common ones, not all 150+)
+    COLOR_KEYWORDS = /\b(?:transparent|black|white|red|green|blue|yellow|cyan|magenta|gray|grey|orange|purple|pink|brown|beige|gold|indigo|lime|maroon|navy|olive|teal|violet|turquoise|silver)\b/
+
+    # Common CSS keywords
+    CSS_KEYWORDS = /\b(?:inherit|initial|unset|auto|none|normal|hidden|visible|scroll|block|inline|flex|grid|absolute|relative|fixed|static|bold|italic|left|right|center|top|bottom)\b/
+
+    # Operators
+    OPERATORS = /[+\-*\/~|^$]?=/
+
+    # Attribute operators
+    ATTR_OP = /[~|^$*]?=/
+
     def config : LexerConfig
       LexerConfig.new(
         name: "css",
@@ -52,50 +124,33 @@ module Obelisk::Lexers
       {
         "root" => [
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
 
           # Comments
-          LexerRule.new(/\/\*/, RuleActions.push("comment", TokenType::CommentMultiline)),
+          LexerRule.new(COMMENT_START, RuleActions.push("comment", TokenType::CommentMultiline)),
 
           # @rules
-          LexerRule.new(/@(charset|namespace)\s+/, RuleActions.push("string_or_url", TokenType::KeywordNamespace)),
-          LexerRule.new(/@(import|font-face|page|media|keyframes|supports|document|viewport|font-feature-values|counter-style|namespace|layer|container|scope|starting-style)\b/, TokenType::KeywordNamespace),
+          LexerRule.new(AT_RULES, TokenType::KeywordNamespace),
 
           # Selectors
-          # ID selector
-          LexerRule.new(/#[a-zA-Z][\w-]*/, TokenType::NameTag),
-
-          # Class selector
-          LexerRule.new(/\.[a-zA-Z][\w-]*/, TokenType::NameClass),
-
-          # Attribute selectors
-          LexerRule.new(/\[/, RuleActions.push("attribute_selector", TokenType::Punctuation)),
-
-          # Pseudo-classes and pseudo-elements
-          LexerRule.new(/::?[a-zA-Z-]+(?:\([^)]*\))?/, TokenType::KeywordPseudo),
-
-          # Element selectors (tags)
-          LexerRule.new(/[a-zA-Z][\w-]*(?=\s*[,{])/, TokenType::NameTag),
-          LexerRule.new(/[a-zA-Z][\w-]*/, TokenType::NameTag),
-
-          # Universal selector
-          LexerRule.new(/\*/, TokenType::NameTag),
-
-          # Combinators
-          LexerRule.new(/[>+~]/, TokenType::Operator),
+          LexerRule.new(ID_SELECTOR, TokenType::NameTag),
+          LexerRule.new(CLASS_SELECTOR, TokenType::NameClass),
+          LexerRule.new(PSEUDO_SELECTOR, TokenType::KeywordPseudo),
+          LexerRule.new(TAG_SELECTOR, TokenType::NameTag),
+          LexerRule.new(UNIVERSAL_SELECTOR, TokenType::NameTag),
+          LexerRule.new(COMBINATORS, TokenType::Operator),
 
           # Start of rule block
           LexerRule.new(/\{/, RuleActions.push("rule_block", TokenType::Punctuation)),
-
-          # Semicolon outside of rule block (for @import, etc.)
           LexerRule.new(/;/, TokenType::Punctuation),
+          LexerRule.new(COMMA, TokenType::Punctuation),
 
-          # Comma (selector separator)
-          LexerRule.new(/,/, TokenType::Punctuation),
+          # Attribute selectors
+          LexerRule.new(/\[/, RuleActions.push("attribute_selector", TokenType::Punctuation)),
         ],
 
         "comment" => [
-          LexerRule.new(/\*\//, RuleActions.pop(TokenType::CommentMultiline)),
+          LexerRule.new(COMMENT_END, RuleActions.pop(TokenType::CommentMultiline)),
           LexerRule.new(/[^*]+/, TokenType::CommentMultiline),
           LexerRule.new(/\*+(?!\/)/, TokenType::CommentMultiline),
           LexerRule.new(/\*/, TokenType::CommentMultiline),
@@ -103,10 +158,10 @@ module Obelisk::Lexers
 
         "rule_block" => [
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
 
           # Comments
-          LexerRule.new(/\/\*/, RuleActions.push("comment", TokenType::CommentMultiline)),
+          LexerRule.new(COMMENT_START, RuleActions.push("comment", TokenType::CommentMultiline)),
 
           # End of rule block
           LexerRule.new(/\}/, RuleActions.pop(TokenType::Punctuation)),
@@ -117,143 +172,69 @@ module Obelisk::Lexers
           # Property names
           LexerRule.new(/([a-zA-Z-]+)(\s*)(:)/, RuleActions.by_groups(TokenType::NameProperty, TokenType::Text, TokenType::Punctuation)),
 
-          # Property values
-          # Important flag
-          LexerRule.new(/!\s*important/, TokenType::KeywordReserved),
-
-          # URLs
-          LexerRule.new(/url\(/, RuleActions.push("url", TokenType::NameFunction)),
-
-          # Functions
-          LexerRule.new(/[a-zA-Z-]+(?=\()/, TokenType::NameFunction),
-
-          # Numbers with units
-          LexerRule.new(/-?\d+\.?\d*(?:px|em|rem|%|vh|vw|pt|cm|mm|in|pc|ex|ch|vmin|vmax|fr|deg|rad|grad|turn|s|ms|Hz|kHz|dpi|dpcm|dppx)?\b/, TokenType::LiteralNumber),
-
-          # Colors
-          LexerRule.new(/#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?(?:[0-9a-fA-F]{2})?\b/, TokenType::LiteralNumberHex),
-          LexerRule.new(/\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\(/, RuleActions.push("function", TokenType::NameFunction)),
-
-          # Color keywords
-          LexerRule.new(/\b(?:transparent|currentcolor|aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkgrey|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|green|greenyellow|grey|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|rebeccapurple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen)\b/, TokenType::NameBuiltin),
+          # Property values (simplified - Chroma approach)
+          LexerRule.new(IMPORTANT_FLAG, TokenType::KeywordReserved),
+          LexerRule.new(HEX_COLOR, TokenType::LiteralNumberHex),
+          LexerRule.new(COLOR_FUNCTION_CALL, RuleActions.push("function", TokenType::NameFunction)),
+          LexerRule.new(COLOR_KEYWORDS, TokenType::NameBuiltin),
+          LexerRule.new(CSS_KEYWORDS, TokenType::KeywordConstant),
+          LexerRule.new(URL_FUNCTION, RuleActions.push("url", TokenType::NameFunction)),
+          LexerRule.new(FUNCTION_NAME, TokenType::NameFunction),
+          LexerRule.new(/#{NUMBER}#{UNIT}/, TokenType::LiteralNumber),
+          LexerRule.new(NUMBER, TokenType::LiteralNumber),
 
           # Strings
-          LexerRule.new(/"/, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
 
-          # Keywords
-          LexerRule.new(/\b(?:inherit|initial|unset|revert|revert-layer|auto|none|normal|hidden|visible|scroll|solid|dotted|dashed|double|groove|ridge|inset|outset|block|inline|inline-block|flex|grid|table|table-row|table-cell|absolute|relative|fixed|sticky|static|bold|italic|underline|line-through|nowrap|pre|pre-wrap|pre-line|break-all|break-word|uppercase|lowercase|capitalize|left|right|center|justify|top|bottom|middle|baseline|pointer|default|crosshair|move|text|wait|help|not-allowed|all|ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end|start|end|both|forwards|backwards|infinite|alternate|reverse|running|paused|flat|preserve-3d)\b/, TokenType::KeywordConstant),
-
-          # Operators
-          LexerRule.new(/[+\-*\/]/, TokenType::Operator),
-
-          # Punctuation
-          LexerRule.new(/[;,()]/, TokenType::Punctuation),
+          # Operators and punctuation
+          LexerRule.new(OPERATORS, TokenType::Operator),
+          LexerRule.new(PUNCTUATION, TokenType::Punctuation),
 
           # Generic identifiers
           LexerRule.new(/[a-zA-Z-]+/, TokenType::Name),
         ],
 
-        "string_or_url" => [
-          # URL
-          LexerRule.new(/url\(/, RuleActions.push("url", TokenType::NameFunction)),
-
-          # Strings
-          LexerRule.new(/"/, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
-
-          # Semicolon ends the statement
-          LexerRule.new(/;/, RuleActions.pop(TokenType::Punctuation)),
-
-          # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
-        ],
-
         "url" => [
           LexerRule.new(/\)/, RuleActions.pop(TokenType::NameFunction)),
-          LexerRule.new(/"/, RuleActions.push("string_double_url", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("string_single_url", TokenType::LiteralStringSingle)),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
           LexerRule.new(/[^)'"\s]+/, TokenType::LiteralString),
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
         ],
 
         "function" => [
           LexerRule.new(/\)/, RuleActions.pop(TokenType::NameFunction)),
           LexerRule.new(/,/, TokenType::Punctuation),
-          LexerRule.new(/\s+/, TokenType::Text),
-
-          # Numbers
+          LexerRule.new(WHITESPACE, TokenType::Text),
           LexerRule.new(/-?\d+\.?\d*%?/, TokenType::LiteralNumber),
-
-          # Keywords in functions
           LexerRule.new(/\b(?:from|to|at)\b/, TokenType::Keyword),
-
-          # Nested functions
           LexerRule.new(/[a-zA-Z-]+(?=\()/, TokenType::NameFunction),
           LexerRule.new(/\(/, RuleActions.push("function", TokenType::Punctuation)),
-
-          # Generic identifiers
           LexerRule.new(/[a-zA-Z-]+/, TokenType::Name),
+        ],
+
+        # Consolidated string states using shared escape pattern
+        "string_double" => [
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.pop(TokenType::LiteralStringDouble)),
+          LexerRule.new(ESCAPE_SEQUENCE, TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_DOUBLE_CONTENT, TokenType::LiteralStringDouble),
+        ],
+
+        "string_single" => [
+          LexerRule.new(SINGLE_QUOTE, RuleActions.pop(TokenType::LiteralStringSingle)),
+          LexerRule.new(ESCAPE_SEQUENCE, TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_SINGLE_CONTENT, TokenType::LiteralStringSingle),
         ],
 
         "attribute_selector" => [
           LexerRule.new(/\]/, RuleActions.pop(TokenType::Punctuation)),
-          LexerRule.new(/\s+/, TokenType::Text),
-
-          # Attribute name
+          LexerRule.new(WHITESPACE, TokenType::Text),
           LexerRule.new(/[a-zA-Z][\w-]*/, TokenType::NameAttribute),
-
-          # Operators
-          LexerRule.new(/[~|^$*]?=/, TokenType::Operator),
-
-          # Strings
-          LexerRule.new(/"/, RuleActions.push("string_double_attr", TokenType::LiteralStringDouble)),
-          LexerRule.new(/'/, RuleActions.push("string_single_attr", TokenType::LiteralStringSingle)),
-
-          # Flags
+          LexerRule.new(ATTR_OP, TokenType::Operator),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
           LexerRule.new(/\s*[iIsS]\b/, TokenType::NameBuiltin),
-        ],
-
-        "string_double" => [
-          LexerRule.new(/"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-          LexerRule.new(/\\[\\"]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^"\\]+/, TokenType::LiteralStringDouble),
-        ],
-
-        "string_single" => [
-          LexerRule.new(/'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-          LexerRule.new(/\\[\\']/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^'\\]+/, TokenType::LiteralStringSingle),
-        ],
-
-        "string_double_url" => [
-          LexerRule.new(/"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-          LexerRule.new(/\\[\\"]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^"\\]+/, TokenType::LiteralStringDouble),
-        ],
-
-        "string_single_url" => [
-          LexerRule.new(/'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-          LexerRule.new(/\\[\\']/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^'\\]+/, TokenType::LiteralStringSingle),
-        ],
-
-        "string_double_attr" => [
-          LexerRule.new(/"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-          LexerRule.new(/\\[\\"]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^"\\]+/, TokenType::LiteralStringDouble),
-        ],
-
-        "string_single_attr" => [
-          LexerRule.new(/'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-          LexerRule.new(/\\[\\']/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^'\\]+/, TokenType::LiteralStringSingle),
         ],
       }
     end

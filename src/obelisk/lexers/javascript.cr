@@ -2,10 +2,11 @@ require "../lexer"
 
 module Obelisk::Lexers
   # JavaScript/TypeScript language lexer
+  # Optimized for performance using Chroma-like simple patterns
   class JavaScript < RegexLexer
     # ==========================================================================
     # Regex Pattern Constants
-    # All patterns are defined as constants to avoid recompilation and enable reuse
+    # Simplified patterns matching Chroma's approach for better performance
     # ==========================================================================
 
     # Whitespace and comments
@@ -27,78 +28,48 @@ module Obelisk::Lexers
     STRING_SINGLE_CONTENT = /[^'\\]+/
     STRING_BACKTICK_CONTENT = /[^`\\$]+/
 
-    # Number literals
-    NUMBER_BIN = /0[bB][01]+(_[01]+)*n?/
-    NUMBER_OCT = /0[oO][0-7]+(_[0-7]+)*n?/
-    NUMBER_HEX = /0[xX][0-9a-fA-F]+(_[0-9a-fA-F]+)*n?/
-    NUMBER_FLOAT = /\d+\.\d*([eE][+-]?\d+)?/
-    NUMBER_FLOAT_LEADING = /\.\d+([eE][+-]?\d+)?/
-    NUMBER_EXP = /\d+[eE][+-]?\d+/
-    NUMBER_INT = /\d+(_\d+)*n?/
+    # Numbers (simplified from 7 to 3 patterns, matching Chroma)
+    NUMBER_FLOAT = /[0-9][0-9]*\.[0-9]+([eE][0-9]+)?[fd]?/
+    NUMBER_HEX = /0x[0-9a-fA-F]+/
+    NUMBER_INT = /[0-9]+/
 
-    # Keywords
+    # Keywords (simplified - one pattern vs Chroma's multiple patterns)
     KEYWORDS = /\b(?:break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|function|if|import|in|instanceof|let|new|return|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/
 
     # TypeScript keywords
-    TYPESCRIPT_KEYWORDS = /\b(?:abstract|as|async|await|constructor|declare|enum|from|get|implements|interface|is|keyof|module|namespace|never|private|protected|public|readonly|require|set|static|type|of)\b/
+    TYPESCRIPT_KEYWORDS = /\b(?:abstract|async|await|constructor|declare|enum|from|get|implements|interface|namespace|readonly|set)\b/
 
-    # Reserved words
-    RESERVED_WORDS = /\b(?:arguments|eval)\b/
+    # Reserved/declaration keywords
+    KEYWORDS_RESERVED = /\b(?:abstract|async|boolean|class|const|debugger|enum|export|extends|from|get|global|goto|implements|import|interface|package|private|protected|public|readonly|require|set|static|super|type)\b/
 
-    # Constants
-    CONSTANTS = /\b(?:true|false|null|undefined|Infinity|NaN)\b/
+    # Constants (simplified from Obelisk's pattern)
+    CONSTANTS = /\b(?:true|false|null|NaN|Infinity|undefined)\b/
 
-    # Built-in objects
-    BUILTIN_OBJECTS = /\b(?:Array|ArrayBuffer|BigInt|BigInt64Array|BigUint64Array|Boolean|DataView|Date|Error|EvalError|Float32Array|Float64Array|Function|Generator|GeneratorFunction|Int8Array|Int16Array|Int32Array|Map|Number|Object|Promise|Proxy|RangeError|ReferenceError|Reflect|RegExp|Set|SharedArrayBuffer|String|Symbol|SyntaxError|TypeError|URIError|Uint8Array|Uint8ClampedArray|Uint16Array|Uint32Array|WeakMap|WeakSet)\b/
+    # Builtin objects (simplified to ~24 names like Chroma, vs Obelisk's 40+)
+    # Note: Chroma includes: Array, Boolean, Date, Error, Function, Math, Number,
+    # Object, RegExp, String, decodeURI, decodeURIComponent, encodeURI,
+    # encodeURIComponent, eval, isFinite, isNaN, parseFloat, parseInt, document, this, window
+    BUILTIN_OBJECTS = /\b(?:Array|Boolean|Date|Error|Function|Math|Number|Object|RegExp|String|decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|eval|isFinite|isNaN|parseFloat|parseInt|document|this|window)\b/
 
-    # Global functions
-    GLOBAL_FUNCTIONS = /\b(?:decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|escape|eval|isFinite|isNaN|parseFloat|parseInt|unescape)\b/
+    # Operators - must include compound operators before single chars
+    # Note: ? is NOT in single-char class as it's only used in ??, ??= operators
+    # Order matters: longer patterns first to avoid splitting
+    OPERATORS = /\+\+|--|\*\*|\.\?|\?\?|\?\?=|&&|\|\||<<|>>>?|===|!==|==|!=|<=|>=|\+=|-=|\*=|\/=|%=|<<=|>>=|>>>=|&=|\|=|\^=|=>|[+\-*\/%<>=!&|^~.]/
 
-    # Console
-    CONSOLE = /\bconsole\b/
-
-    # Regular expression literal (simplified - real JS regex detection is context-sensitive)
-    REGEX_LITERAL = /\/(?:[^\/\\\n]|\\.)+\/[gimsuvy]*/
-
-    # JSX/TSX tags
-    JSX_OPEN_TAG = /<([A-Z][a-zA-Z0-9_]*)/
-    JSX_CLOSE_TAG = /<\/([A-Z][a-zA-Z0-9_]*)>/
-
-    # Type annotations
-    TYPE_ANNOTATION = /:\s*([a-zA-Z_]\w*)/
-
-    # Class names
-    CLASS_NAME = /\b[A-Z][a-zA-Z0-9_]*\b/
-
-    # Function definitions
-    FUNCTION_DEF = /\b(function)(\s+)([a-zA-Z_]\w*)/
-    ASYNC_FUNCTION_DEF = /\b(async)(\s+)(function)(\s+)([a-zA-Z_]\w*)/
-
-    # Arrow functions
-    ARROW_FUNCTION = /([a-zA-Z_]\w*)(\s*)(=>)/
-    ARROW_OPERATOR = /=>/
-
-    # Method calls and property access
-    PROPERTY_ACCESS = /\.([a-zA-Z_]\w*)/
-
-    # Function calls (with lookahead - note: expensive but required for functionality)
-    FUNCTION_CALL = /[a-zA-Z_$][\w$]*(?=\s*\()/
-
-    # Identifiers
-    IDENTIFIER = /[a-zA-Z_$][\w$]*/
-
-    # Operators
-    OPERATORS = /\+\+|--|&&|\|\||<<|>>>?|[+\-*\/%<>=!&|^~]+/
-    TERNARY = /[?:]/
-    SPREAD = /\.\.\./
-
-    # Punctuation
-    PUNCTUATION = /[.,;()\[\]{}]/
+    # Punctuation (dot is handled separately to support optional chaining ?. operator)
+    PUNCTUATION = /[,;:()\[\]{}|]/
 
     # Template literal interpolation
     INTERPOLATION_START = /\$\{/
     INTERPOLATION_END = /\}/
     LONE_DOLLAR = /\$/
+
+    # Generic identifier (Chroma approach - most identifiers are just "names")
+    IDENTIFIER = /[a-zA-Z_$][a-zA-Z0-9_$]*/
+
+    # Regular expression literal (simplified - not context-aware like a real parser)
+    # This may have false positives but is much faster than full context tracking
+    REGEX_LITERAL = /\/(?:[^\/\\\n]|\\.)+\/[gimsuvy]*/
 
     def config : LexerConfig
       LexerConfig.new(
@@ -166,7 +137,7 @@ module Obelisk::Lexers
           LexerRule.new(TYPESCRIPT_KEYWORDS, TokenType::Keyword),
 
           # Reserved words
-          LexerRule.new(RESERVED_WORDS, TokenType::KeywordReserved),
+          LexerRule.new(KEYWORDS_RESERVED, TokenType::KeywordReserved),
 
           # Constants
           LexerRule.new(CONSTANTS, TokenType::KeywordConstant),
@@ -175,20 +146,9 @@ module Obelisk::Lexers
           # NOTE: Large alternations like this contribute to slow performance
           LexerRule.new(BUILTIN_OBJECTS, TokenType::NameBuiltin),
 
-          # Global functions
-          # NOTE: Large alternations like this contribute to slow performance
-          LexerRule.new(GLOBAL_FUNCTIONS, TokenType::NameBuiltin),
-
-          # Console object
-          LexerRule.new(CONSOLE, TokenType::NameBuiltin),
-
           # Numbers
-          LexerRule.new(NUMBER_BIN, TokenType::LiteralNumberBin),
-          LexerRule.new(NUMBER_OCT, TokenType::LiteralNumberOct),
           LexerRule.new(NUMBER_HEX, TokenType::LiteralNumberHex),
           LexerRule.new(NUMBER_FLOAT, TokenType::LiteralNumberFloat),
-          LexerRule.new(NUMBER_FLOAT_LEADING, TokenType::LiteralNumberFloat),
-          LexerRule.new(NUMBER_EXP, TokenType::LiteralNumberFloat),
           LexerRule.new(NUMBER_INT, TokenType::LiteralNumberInteger),
 
           # Strings
@@ -196,38 +156,14 @@ module Obelisk::Lexers
           LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
           LexerRule.new(BACKTICK, RuleActions.push("template_string", TokenType::LiteralStringBacktick)),
 
-          # Regular expressions (simplified - real JS regex detection is context-sensitive)
+          # Regular expressions (simplified - not truly context-aware)
           LexerRule.new(REGEX_LITERAL, TokenType::LiteralStringRegex),
 
-          # JSX/TSX tags
-          LexerRule.new(JSX_OPEN_TAG, RuleActions.by_groups(TokenType::NameTag)),
-          LexerRule.new(JSX_CLOSE_TAG, RuleActions.by_groups(TokenType::NameTag)),
-
-          # Type annotations (TypeScript)
-          LexerRule.new(TYPE_ANNOTATION, RuleActions.by_groups(TokenType::KeywordType)),
-
-          # Class names
-          LexerRule.new(CLASS_NAME, TokenType::NameClass),
-
-          # Function/method definitions
-          LexerRule.new(FUNCTION_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
-          LexerRule.new(ASYNC_FUNCTION_DEF, RuleActions.by_groups(TokenType::Keyword, TokenType::Text, TokenType::Keyword, TokenType::Text, TokenType::NameFunction)),
-
-          # Arrow functions
-          LexerRule.new(ARROW_FUNCTION, RuleActions.by_groups(TokenType::Name, TokenType::Text, TokenType::Operator)),
-
-          # Method calls and property access
-          LexerRule.new(PROPERTY_ACCESS, RuleActions.by_groups(TokenType::NameAttribute)),
-
-          # Function calls
-          LexerRule.new(FUNCTION_CALL, TokenType::NameFunction),
+          # Generic identifier (Chroma's approach - keeps it simple)
           LexerRule.new(IDENTIFIER, TokenType::Name),
 
           # Operators
           LexerRule.new(OPERATORS, TokenType::Operator),
-          LexerRule.new(TERNARY, TokenType::Operator),
-          LexerRule.new(SPREAD, TokenType::Operator),
-          LexerRule.new(ARROW_OPERATOR, TokenType::Operator),
           LexerRule.new(PUNCTUATION, TokenType::Punctuation),
         ],
 

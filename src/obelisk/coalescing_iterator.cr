@@ -6,99 +6,81 @@ module Obelisk
   class CoalescingIterator
     include Iterator(Token)
 
-    @buffer : Deque(Token)
-    @next_buffer : Token?
+    @peeked_token : Token?
+    @peeked_is_stop : Bool
     @done : Bool
 
     def initialize(@source : TokenIterator, @max_size : Int32? = nil)
-      @buffer = Deque(Token).new
-      @next_buffer = nil
+      @peeked_token = nil
+      @peeked_is_stop = false
       @done = false
     end
 
     def next : Token | Iterator::Stop
       return stop if @done
 
-      begin
-        # Fill buffer with first token if empty
-        if @buffer.empty?
-          # Use next_buffer if available, otherwise get from source
-          if nb = @next_buffer
-            @buffer << nb
-            @next_buffer = nil
-          else
-            first_token = @source.next
-            return stop if first_token.is_a?(Iterator::Stop)
-            @buffer << first_token
-          end
-        end
+      # If we have a saved token, return it
+      if token = @peeked_token
+        @peeked_token = nil
+        @peeked_is_stop = false
+        return token
+      end
 
-        # Safety check
-        if @buffer.empty?
+      if @peeked_is_stop
+        @peeked_is_stop = false
+        return stop
+      end
+
+      # Get the first token
+      first_token = @source.next
+      if first_token.is_a?(Iterator::Stop)
+        @done = true
+        return stop
+      end
+
+      # Start building the coalesced value
+      current_type = first_token.type
+      current_value = first_token.value
+      current_size = current_value.size
+
+      # Look ahead to coalesce more tokens of the same type
+      loop do
+        peek_result = @source.next
+
+        if peek_result.is_a?(Iterator::Stop)
           @done = true
-          return stop
+          break
         end
 
-        # Keep collecting tokens while they have the same type
-        current_type = @buffer.first.type
-        current_size = @buffer.sum(&.value.size)
+        peek_token = peek_result.as(Token)
 
-        loop do
-          # Check if we have a next_buffer token
-          next_token = if nb = @next_buffer
-                         @next_buffer = nil
-                         nb
-                       else
-                         source_token = @source.next
-                         if source_token.is_a?(Iterator::Stop)
-                           @done = true
-                           break
-                         else
-                           source_token
-                         end
-                       end
-
-          # If types match and we haven't hit size limit, keep collecting
+        if peek_token.type == current_type
+          new_size = current_size + peek_token.value.size
           max_size = @max_size
-          if next_token.type == current_type
-            new_size = current_size + next_token.value.size
-            if !max_size || new_size <= max_size
-              @buffer << next_token
-              current_size = new_size
-            else
-              # Size limit hit - save for next iteration
-              @next_buffer = next_token
-              break
-            end
+          if !max_size || new_size <= max_size
+            # Coalesce: append the value
+            current_value += peek_token.value
+            current_size = new_size
           else
-            # Different type - save for next iteration
-            @next_buffer = next_token
+            # Size limit hit - save for next iteration
+            @peeked_token = peek_token
             break
           end
-        end
-
-        # Coalesce all tokens in buffer
-        if @buffer.size == 1
-          @buffer.shift
         else
-          coalesced_value = String.build do |str|
-            @buffer.each { |t| str << t.value }
-          end
-          @buffer.clear
-          Token.new(current_type, coalesced_value)
+          # Different type - save for next iteration
+          @peeked_token = peek_token
+          break
         end
-      rescue
-        # If any error occurs, mark as done and return stop
-        @done = true
-        stop
       end
+
+      Token.new(current_type, current_value)
     end
 
     # Static helper to wrap any iterator with coalescing
     # Default max_size of 4KB prevents unbounded growth while still
     # providing significant performance benefits for typical code
+    # NOTE: Currently disabled due to memory corruption issues that need investigation
     def self.wrap(source : TokenIterator, max_size : Int32? = 4096) : TokenIterator
-      # Temporarily disabled for debugging
       source
     end
   end
