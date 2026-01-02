@@ -2,7 +2,74 @@ require "../lexer"
 
 module Obelisk::Lexers
   # YAML lexer
+  # Optimized with regex constants
   class YAML < RegexLexer
+    # ==========================================================================
+    # Regex Pattern Constants
+    # ==========================================================================
+
+    # Document markers
+    DOC_START = /^---/
+    DOC_END = /^\.\.\./
+
+    # Whitespace and comments
+    WHITESPACE = /\s+/
+    COMMENT = /#.*$/
+
+    # String delimiters
+    DOUBLE_QUOTE = /"/
+    SINGLE_QUOTE = /'/
+
+    # Escape sequences
+    ESCAPE_SIMPLE = /\\[\"\\\/bfnrt]/
+    ESCAPE_UNICODE = /\\u[0-9a-fA-F]{4}/
+    ESCAPE_UNICODE_LONG = /\\U[0-9a-fA-F]{8}/
+    ESCAPE_HEX = /\\x[0-9a-fA-F]{2}/
+    ESCAPE_ANY = /\\./
+
+    # String content patterns
+    STRING_DOUBLE_CONTENT = /[^\"\\]+/
+    STRING_SINGLE_CONTENT = /[^\']+/
+    ESCAPED_SINGLE_QUOTE = /\'\'/
+
+    # Multi-line indicators
+    MULTILINE_INDICATOR = /[|>][-+]?/
+
+    # Keys (before colon)
+    KEY_WITH_COLON = /^(\s*)([^#\s][^:]*?)(\s*)(:)(\s|$)/
+
+    # Array indicators
+    ARRAY_INDICATOR = /^(\s*)(-)(\s)/
+
+    # Boolean values
+    BOOLEAN = /\b(?:true|false|yes|no|on|off)\b/i
+
+    # Null values
+    NULL = /\b(?:null|~)\b/i
+
+    # Numbers
+    NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/
+    NUMBER_HEX = /0x[0-9a-fA-F]+/
+    NUMBER_OCT = /0o[0-7]+/
+
+    # Timestamps
+    TIMESTAMP = /\d{4}-\d{2}-\d{2}(?:[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})?)?/
+
+    # Tags
+    TAG_SIMPLE = /![a-zA-Z_][a-zA-Z0-9_]*/
+    TAG_URI = /!<[^>]*>/
+
+    # Anchors and aliases
+    ANCHOR =/&[a-zA-Z_][a-zA-Z0-9_]*/
+    ALIAS = /\*[a-zA-Z_][a-zA-Z0-9_]*/
+
+    # Punctuation
+    BRACES = /[\[\]{}]/
+    COMMA = /,/
+
+    # Plain scalars (unquoted strings)
+    PLAIN_SCALAR = /[^\s#,\[\]{}]+/
+
     def config : LexerConfig
       LexerConfig.new(
         name: "yaml",
@@ -68,25 +135,36 @@ module Obelisk::Lexers
       [[score, 0.0f32].max, 1.0f32].min
     end
 
+    # Helper to get string escape rules
+    private def string_escape_rules(token_type : TokenType) : Array(LexerRule)
+      [
+        LexerRule.new(ESCAPE_SIMPLE, token_type),
+        LexerRule.new(ESCAPE_UNICODE, token_type),
+        LexerRule.new(ESCAPE_UNICODE_LONG, token_type),
+        LexerRule.new(ESCAPE_HEX, token_type),
+        LexerRule.new(ESCAPE_ANY, token_type),
+      ]
+    end
+
     def rules : Hash(String, Array(LexerRule))
       {
         "root" => [
           # YAML document markers
-          LexerRule.new(/^---/, TokenType::NameTag),
-          LexerRule.new(/^\.\.\./, TokenType::NameTag),
+          LexerRule.new(DOC_START, TokenType::NameTag),
+          LexerRule.new(DOC_END, TokenType::NameTag),
 
           # Comments
-          LexerRule.new(/#.*$/, TokenType::CommentSingle),
+          LexerRule.new(COMMENT, TokenType::CommentSingle),
 
           # Strings with quotes
-          LexerRule.new(/\"/, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
-          LexerRule.new(/\'/, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.push("string_double", TokenType::LiteralStringDouble)),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.push("string_single", TokenType::LiteralStringSingle)),
 
           # Multi-line strings
-          LexerRule.new(/[|>][-+]?/, TokenType::Punctuation),
+          LexerRule.new(MULTILINE_INDICATOR, TokenType::Punctuation),
 
           # Keys (before colon)
-          LexerRule.new(/^(\s*)([^#\s][^:]*?)(\s*)(:)(\s|$)/, RuleActions.by_groups(
+          LexerRule.new(KEY_WITH_COLON, RuleActions.by_groups(
             TokenType::Text,
             TokenType::NameAttribute,
             TokenType::Text,
@@ -95,59 +173,55 @@ module Obelisk::Lexers
           )),
 
           # Array indicators
-          LexerRule.new(/^(\s*)(-)(\s)/, RuleActions.by_groups(
+          LexerRule.new(ARRAY_INDICATOR, RuleActions.by_groups(
             TokenType::Text,
             TokenType::Punctuation,
             TokenType::Text
           )),
 
           # Boolean values
-          LexerRule.new(/\b(?:true|false|yes|no|on|off)\b/i, TokenType::KeywordConstant),
+          LexerRule.new(BOOLEAN, TokenType::KeywordConstant),
 
           # Null values
-          LexerRule.new(/\b(?:null|~)\b/i, TokenType::KeywordConstant),
+          LexerRule.new(NULL, TokenType::KeywordConstant),
 
           # Numbers
-          LexerRule.new(/-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/, TokenType::LiteralNumber),
-          LexerRule.new(/0x[0-9a-fA-F]+/, TokenType::LiteralNumberHex),
-          LexerRule.new(/0o[0-7]+/, TokenType::LiteralNumberOct),
+          LexerRule.new(NUMBER, TokenType::LiteralNumber),
+          LexerRule.new(NUMBER_HEX, TokenType::LiteralNumberHex),
+          LexerRule.new(NUMBER_OCT, TokenType::LiteralNumberOct),
 
           # Timestamps
-          LexerRule.new(/\d{4}-\d{2}-\d{2}(?:[Tt]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})?)?/, TokenType::LiteralDate),
+          LexerRule.new(TIMESTAMP, TokenType::LiteralDate),
 
           # Tags
-          LexerRule.new(/![a-zA-Z_][a-zA-Z0-9_]*/, TokenType::NameTag),
-          LexerRule.new(/!<[^>]*>/, TokenType::NameTag),
+          LexerRule.new(TAG_SIMPLE, TokenType::NameTag),
+          LexerRule.new(TAG_URI, TokenType::NameTag),
 
           # Anchors and aliases
-          LexerRule.new(/&[a-zA-Z_][a-zA-Z0-9_]*/, TokenType::NameLabel),
-          LexerRule.new(/\*[a-zA-Z_][a-zA-Z0-9_]*/, TokenType::NameVariable),
+          LexerRule.new(ANCHOR, TokenType::NameLabel),
+          LexerRule.new(ALIAS, TokenType::NameVariable),
 
           # Special characters
-          LexerRule.new(/[\[\]{}]/, TokenType::Punctuation),
-          LexerRule.new(/,/, TokenType::Punctuation),
+          LexerRule.new(BRACES, TokenType::Punctuation),
+          LexerRule.new(COMMA, TokenType::Punctuation),
 
           # Plain scalars (unquoted strings)
-          LexerRule.new(/[^\s#,\[\]{}]+/, TokenType::LiteralString),
+          LexerRule.new(PLAIN_SCALAR, TokenType::LiteralString),
 
           # Whitespace
-          LexerRule.new(/\s+/, TokenType::Text),
+          LexerRule.new(WHITESPACE, TokenType::Text),
         ],
 
         "string_double" => [
-          LexerRule.new(/\"/, RuleActions.pop(TokenType::LiteralStringDouble)),
-          LexerRule.new(/\\[\"\\\/bfnrt]/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\u[0-9a-fA-F]{4}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\U[0-9a-fA-F]{8}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\x[0-9a-fA-F]{2}/, TokenType::LiteralStringEscape),
-          LexerRule.new(/\\./, TokenType::LiteralStringEscape),
-          LexerRule.new(/[^\"\\]+/, TokenType::LiteralStringDouble),
+          LexerRule.new(DOUBLE_QUOTE, RuleActions.pop(TokenType::LiteralStringDouble)),
+          *string_escape_rules(TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_DOUBLE_CONTENT, TokenType::LiteralStringDouble),
         ],
 
         "string_single" => [
-          LexerRule.new(/\'/, RuleActions.pop(TokenType::LiteralStringSingle)),
-          LexerRule.new(/\'\'/, TokenType::LiteralStringEscape), # Escaped quote in single quotes
-          LexerRule.new(/[^\']+/, TokenType::LiteralStringSingle),
+          LexerRule.new(SINGLE_QUOTE, RuleActions.pop(TokenType::LiteralStringSingle)),
+          LexerRule.new(ESCAPED_SINGLE_QUOTE, TokenType::LiteralStringEscape),
+          LexerRule.new(STRING_SINGLE_CONTENT, TokenType::LiteralStringSingle),
         ],
       }
     end

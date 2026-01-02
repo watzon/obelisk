@@ -75,12 +75,12 @@ describe Obelisk::Lexers::CSS do
       hex_values.should contain("#fff")
       hex_values.should contain("#123456")
 
-      # Color functions
+      # Color functions (note: includes opening paren for efficiency)
       func_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameFunction }
       func_values = func_tokens.map(&.value)
-      func_values.should contain("rgb")
-      func_values.should contain("rgba")
-      func_values.should contain("hsl")
+      func_values.should contain("rgb(")
+      func_values.should contain("rgba(")
+      func_values.should contain("hsl(")
     end
 
     it "tokenizes pseudo-classes and pseudo-elements" do

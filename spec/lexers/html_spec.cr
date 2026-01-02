@@ -100,7 +100,8 @@ describe Obelisk::Lexers::HTML do
       keyword_values.should contain("const")
       keyword_values.should contain("function")
 
-      func_tokens = tokens.select { |t| t.type == Obelisk::TokenType::NameFunction }
+      # Function names are generic identifiers (Chroma-like approach)
+      func_tokens = tokens.select { |t| t.type == Obelisk::TokenType::Name }
       func_tokens.map(&.value).should contain("greet")
     end
 
